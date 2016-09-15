@@ -3,8 +3,8 @@ project(VE482)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-include_directories(lib/googletest/include)
+include_directories(lib/GTest/googletest/include)
 
-add_subdirectory(lib)
+add_subdirectory(lib/GTest)
 
 add_subdirectory(p1)
