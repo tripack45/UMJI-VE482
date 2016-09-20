@@ -7,7 +7,8 @@
 #include "tokenizer.h"
 #include "parser.h"
 #include "exception.h"
-#include "signal_action.h"
+#include "api.h"
+#include "execute.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,12 +25,12 @@ int main() {
     atexit(freeBuffer);
     buffer = malloc(sizeof(char) * bufferSize);
     attachSigInt(actionExit);
+    //attachSigChd(actionSigChd);
 
     for (;;) {
-        printf("user@ve482: $ ");
+        printf("user@ve482:%s $ ", pwd());
         fgets(buffer, bufferSize, stdin);
         handleCmd(buffer);
-
     }
 }
 
@@ -50,7 +51,7 @@ void handleCmd(char* buffer) {
         return;
     }
     CATCH_ELSE() {
-        printf("Unknown error, error code [%d]\n", errcode());
+        printf("Tokenizer: Unknown error, error code [%d]\n", errcode());
         resetError();
         return;
     }
@@ -85,11 +86,12 @@ void handleCmd(char* buffer) {
         return;
     }
     CATCH_ELSE() {
-        printf("Syntax Error: Unknown error, error code [%d]\n", errcode());
+        printf("parser: Unknown error, error code [%d]\n", errcode());
         resetError();
         return;
     }
-    printf("command successfully parsed!\n");
+    //printf("command successfully parsed!\n");
+    execute(ss);
 }
 
 

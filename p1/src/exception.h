@@ -5,6 +5,8 @@
 #ifndef VE482_EXCEPTION_H
 #define VE482_EXCEPTION_H
 
+#include <assert.h>
+
 void setError(int e);
 void resetError();
 int errcode();
@@ -21,6 +23,9 @@ int errcode();
 #define CATCH(e) if (errcode() == e)
 #define CATCH_ELSE() if(errcode())
 
+#define LAST_EXCEPTION (errcode())
+
+#define EXCEPTION_UNKNOWN 0xFF
 
 #define EXCEPTION_DEQUE_EMPTY 0xFF01
 #define EXCEPTION_DEQUE_FULL 0xFF02
@@ -37,5 +42,11 @@ int errcode();
 #define EXCEPTION_PASER_MISSING_REDIRECTION_FILE 0xEE07
 
 #define EXCEPTION_PASER_MISSING_EXECUTABLE 0xEE08
+
+#define EXCEPTION_RUNTIME_PATH_TOO_LONG 0xDD01
+#define EXCEPTION_RUNTIME_PATH_NOT_EXIST 0xDD02
+#define EXCEPTION_RUNTIME_FILE_NOT_EXIST 0xDD03
+#define EXCEPTION_RUNTIME_PERMISSION_DENIED 0xDD04
+#define EXCEPTION_RUNTIME_NOT_A_FILE 0xDD04
 
 #endif //VE482_EXCEPTION_H

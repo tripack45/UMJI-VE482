@@ -7,7 +7,8 @@ set(SOURCE_FILES
         src/exception.c
         src/tokenizer.c
         src/parser.c
-        src/signal_action.c)
+        src/execute.c
+        src/api.c)
 
 # The default target
 add_executable(p1 ${SOURCE_FILES})
