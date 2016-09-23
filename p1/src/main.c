@@ -57,8 +57,7 @@ void handleCmd(char* buffer) {
     }
     stageStack *ss = parse(ts);
     if(errcode()) {
-        dequeFreeAll(ts);
-        deleteDeque(ts);
+        ts->del(ts);
     }
     CATCH(EXCEPTION_PASER_MISSING_EXECUTABLE) {
         printf("Syntax Error: Missing command!\n");

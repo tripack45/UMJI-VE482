@@ -24,9 +24,7 @@ tokenStack *tokenize(const char* str) {
     int len = (int)strlen(str);
     if (len > MAX_CMD_LEN)
         RAISE(EXCEPTION_TOKENIZER_TOO_MANY_CHAR, NULL);
-    int stackSize = len / 3;
-    stackSize = stackSize < 10 ? 10 : stackSize;
-    tokenStack *stack = newDeque(stackSize);
+    tokenStack *stack = NEW(deque)();
     assert(stack != NULL);
     int begin = 0;
     int end = begin;
@@ -40,8 +38,7 @@ tokenStack *tokenize(const char* str) {
                 begin++; // Throw the opening quote
                 int nextQuote = getNextQuote(str, begin);
                 if (nextQuote == len) {
-                    dequeFreeAll(stack);
-                    deleteDeque(stack);
+                    stack->del(stack);
                     RAISE(EXCEPTION_TOKENIZER_UNBALANCED_QUOTE, NULL);
                 }
                 tok = cloneSubStr(str, begin, nextQuote);
@@ -50,10 +47,9 @@ tokenStack *tokenize(const char* str) {
                 end = getNextBlank(str, begin);
                 tok = cloneSubStr(str, begin, end);
             }
-            dequePushBack(stack, tok);
+            stack->pushBack(stack, tok);
             CATCH(EXCEPTION_DEQUE_FULL) {
-                dequeFreeAll(stack);
-                deleteDeque(stack);
+                stack->del(stack);
                 RAISE(EXCEPTION_TOKENIZER_TOO_MANY_TOKEN, NULL);
             }
             begin = end;

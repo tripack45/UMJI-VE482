@@ -53,8 +53,8 @@ int exeDummy(int argc, const char* argv[]) {
 
 int execute(stageStack *ss) {
     initializeContext(&ctx);
-    while (!DEQUE_ISEMPTY(ss)) {
-        stage *s = dequePopFront(ss);
+    while (!ss->isEmpty(ss)) {
+        stage *s = ss->popFront(ss);
         char* executable = s->argv[0];
         if (strcmp(executable, "exit") == 0) {
             exit(0);
@@ -70,6 +70,5 @@ int execute(stageStack *ss) {
         }
         free(s);
     }
-    dequeFreeAll(ss);
-    deleteDeque(ss);
+    ss->del(ss);
 }

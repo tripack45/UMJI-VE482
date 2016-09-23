@@ -1,78 +1,108 @@
 //
 // Created by tripack on 16-9-18.
 //
+
+#define DEQUE_EXPOSE_PRIVATE
+
 #include "deque.h"
 #include "exception.h"
 
 #include <stdlib.h>
 #include <assert.h>
 
-deque *newDeque(int size) {
-    if (size < 0)
-        RAISE(EXCEPTION_DEQUE_ILLEGAL_CTOR, NULL);
-    deque* dq = (deque*)malloc(sizeof(deque));
-    dq->data = malloc(sizeof(void*) * size);
-    dq->size = size;
-    dq->count = 0;
-    dq->head = 0;
-    dq->tail = 1;
-    return dq;
+deque *new_deque() {
+    deque *d = malloc(sizeof(deque));
+
+    d->isEmpty= dequeIsEmpty;
+
+    d->pushBack = dequePushBack;
+    d->popBack = dequePopBack;
+    d->pushFront = dequePushFront;
+    d->popFront = dequePopFront;
+
+    d->clear = dequeClear;
+    d->del = dequeDelete;
+
+    d->count = 0;
+
+    d->head.prev = d->tail.next = NULL;
+    d->head.next = &(d->tail);
+    d->tail.prev = &(d->head);
 }
 
-void dequePushBack(deque* dq, const void* elem) {
-    assert(dq != NULL);
-    if (DEQUE_ISFULL(dq))
-        RAISE_VOID(EXCEPTION_DEQUE_FULL);
-    dq->data[dq->tail] = elem;
-    dq->tail = (dq->tail + 1) % dq->size;
-    dq->count++;
+int dequeIsEmpty(deque *obj) {
+    return obj->count == 0;
 }
 
-void dequePushFront(deque* dq, const void* elem) {
-    assert(dq != NULL);
-    if (DEQUE_ISFULL(dq))
-        RAISE_VOID(EXCEPTION_DEQUE_FULL);
-    dq->data[dq->head] = elem;
-    dq->head = (dq->head + dq->size -1) % dq->size;
-    dq->count++;
+void dequePushFront(deque* obj, const dataptr elem) {
+    node* nextNode = obj->head.next;
+
+    node* newNode = malloc(sizeof(node));
+    newNode->prev = &(obj->head);
+    newNode->next = nextNode;
+    newNode->value = elem;
+
+    obj->head.next = newNode;
+
+    nextNode->prev = newNode;
+
+    obj->count++;
 }
 
-void* dequePopBack(deque* dq) {
-    assert(dq != NULL);
-    if (DEQUE_ISEMPTY(dq))
-        RAISE(EXCEPTION_DEQUE_EMPTY, NULL);
-    dq->tail = (dq->tail + dq->size -1) % dq->size;
-    dq->count --;
-    dataptr *ret = dq->data[dq->tail];
+void dequePushBack(deque* obj, const dataptr elem) {
+    node* prevNode = obj->tail.prev;
+
+    node* newNode = malloc(sizeof(node));
+    newNode->prev = prevNode;
+    newNode->next = &(obj->tail);
+    newNode->value = elem;
+
+    obj->tail.prev = newNode;
+
+    prevNode->next = newNode;
+
+    obj->count++;
+}
+
+dataptr deleteNode(deque* obj, node* victim) {
+    dataptr ret = victim->value;
+
+    node *next = victim->next;
+    node *prev = victim->prev;
+
+    prev->next = next;
+    next->prev = prev;
+
+    free(victim);
+
+    obj->count--;
+
     return ret;
 }
 
-void* dequePopFront(deque* dq) {
-    assert(dq != NULL);
-    if (DEQUE_ISEMPTY(dq))
+dataptr dequePopBack(deque* obj) {
+    if (obj->isEmpty(obj))
         RAISE(EXCEPTION_DEQUE_EMPTY, NULL);
-    dq->head = (dq->head + 1) % dq->size;
-    dq->count --;
-    dataptr *ret = dq->data[dq->head];
-    return ret;
+
+    node *victim = obj->tail.prev;
+    return deleteNode(obj, victim);
 }
 
-void dequePopAll(deque* dq) {
-    assert(dq != NULL);
-    while (!DEQUE_ISEMPTY(dq))
-        dequePopBack(dq);
+dataptr dequePopFront(deque* obj) {
+    if (obj->isEmpty(obj))
+        RAISE(EXCEPTION_DEQUE_EMPTY, NULL);
+
+    node *victim = obj->head.next;
+    return deleteNode(obj, victim);
 }
 
-void dequeFreeAll(deque* dq) {
-    assert(dq != NULL);
-    while (!DEQUE_ISEMPTY(dq))
-        free(dequePopBack(dq));
+void dequeClear(deque* obj) {
+    while(!obj->isEmpty(obj))
+        free(obj->popFront(obj));
 }
 
-void deleteDeque(deque* dq) {
-    assert(dq != NULL);
-    if (!DEQUE_ISEMPTY(dq))
-        RAISE_VOID(EXCEPTION_DEQUE_NONE_EMPTY_DTOR);
-    free(dq->data);
-    free(dq);
+void dequeDelete(deque* obj) {
+    if(!obj->isEmpty(obj))
+        obj->clear(obj);
+    free(obj);
 }

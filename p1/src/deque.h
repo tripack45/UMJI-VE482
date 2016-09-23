@@ -5,30 +5,53 @@
 #ifndef VE482_DEQUE_H
 #define VE482_DEQUE_H
 
-typedef const void* dataptr;
+// Object oriented is the best
 
-typedef struct {
-    int size;
+#define NEW(type) (new_ ## type)
+
+typedef void* dataptr;
+
+typedef struct node_t{
+    struct node_t *prev;
+    struct node_t *next;
+    dataptr value;
+} node;
+
+typedef struct deque_t{
     int count;
-    dataptr *data;
-    int head;
-    int tail;
-}deque;
+    node head; // Node instead of pointer for regualrity
+    node tail;
 
-deque *newDeque(int size);
+    int (*isEmpty)(struct deque_t *obj);
 
-#define DEQUE_ISEMPTY(deque) (deque->count == 0)
-#define DEQUE_ISFULL(deque) (deque->size == deque->count)
+    void (*pushBack)(struct deque_t *obj,
+                     const dataptr elem);
+    void (*pushFront)(struct deque_t *obj,
+                      const dataptr elem);
+    dataptr (*popBack)(struct deque_t *obj);
+    dataptr (*popFront)(struct deque_t *obj);
 
-void dequePushBack(deque* dq,const void* elem);
-void dequePushFront(deque* dq,const void* elem);
-void* dequePopBack(deque* dq);
-void* dequePopFront(deque* dq);
+    void (*clear)(struct deque_t *obj);
+    void (*del)(struct deque_t *obj);
+} deque;
 
-void dequePopAll(deque* dq);
-void dequeFreeAll(deque* dq);
+deque* new_deque();
 
-void deleteDeque(deque* dq);
+#ifdef DEQUE_EXPOSE_PRIVATE
 
+int dequeIsEmpty(deque* obj);
+
+void dequePushBack(deque* obj, const dataptr elem);
+void dequePushFront(deque* obj,const dataptr elem);
+dataptr dequePopBack(deque* obj);
+dataptr dequePopFront(deque* obj);
+
+void dequeClear(deque* obj);
+
+void dequeDelete(deque* obj);
+
+dataptr deleteNode(deque* obj, node* victim);
+
+#endif
 
 #endif //VE482_DEQUE_H
