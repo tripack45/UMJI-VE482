@@ -17,22 +17,26 @@
 #define STDOUT_FILE_TRUNCATE 0x00E3
 #define STDOUT_FILE_APPEND 0x00E4
 
-//#define STDIO_UNSPECIFIED 0xCC
+typedef deque stringStack;
+stringStack *new_stringStack();
 
-
-typedef struct {
-    int argc;
-    char* *argv;
+typedef struct stage_t{
+    stringStack *argStack;
     int stdin;
     char* stdinArg;
     int stdout;
     char* stdoutArg;
+
+    void (*del)(struct stage_t *obj);
 }stage;
+stage *new_stage();
+void stageDelete(struct stage_t *obj);
+
 
 typedef deque stageStack;
+stageStack *new_stageStack();
+void stageStackClear(stageStack* obj);
 
-stageStack *parse(tokenStack *ts);
-
-//void printStageStack(stageStack *ss);
+void parse(tokenStack *ts, stageStack *ss);
 
 #endif //VE482_SEMANTIC_H

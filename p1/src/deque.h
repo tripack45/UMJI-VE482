@@ -7,8 +7,6 @@
 
 // Object oriented is the best
 
-#define NEW(type) (new_ ## type)
-
 typedef void* dataptr;
 
 typedef struct node_t{
@@ -31,6 +29,9 @@ typedef struct deque_t{
     dataptr (*popBack)(struct deque_t *obj);
     dataptr (*popFront)(struct deque_t *obj);
 
+    dataptr (*front)(struct deque_t *obj);
+    dataptr (*back)(struct deque_t *obj);
+
     void (*clear)(struct deque_t *obj);
     void (*del)(struct deque_t *obj);
 } deque;
@@ -45,6 +46,9 @@ void dequePushBack(deque* obj, const dataptr elem);
 void dequePushFront(deque* obj,const dataptr elem);
 dataptr dequePopBack(deque* obj);
 dataptr dequePopFront(deque* obj);
+
+dataptr dequeFront(deque* obj);
+dataptr dequeBack(deque* obj);
 
 void dequeClear(deque* obj);
 

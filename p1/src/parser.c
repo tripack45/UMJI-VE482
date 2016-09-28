@@ -6,137 +6,165 @@
 #include "exception.h"
 #include "assert.h"
 #include "deque.h"
+#include "tokenizer.h"
+#include "oop.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-stageStack *parse(tokenStack *ts) {
-    stageStack *ss= NEW(deque)();
-    if (ts->isEmpty(ts)) return ss;
-    tokenStack *argStack = NEW(deque)();
+// parse the given token stream
+// append the results into stage stream
+// Require both arguments are none - null
+void parse(tokenStack *ts, stageStack *ss) {
+    assert(ts != NULL);
+    assert(ss != NULL);
+
+    if (ts->isEmpty(ts)) return;
     stage *stg = NULL;
 
-    stg = (stage*)malloc(sizeof(stage));
-    stg->argv = NULL;
-    stg->stdinArg = stg->stdoutArg = NULL;
-    stg->stdin = STDIN_NORMAL;
-    stg->stdout = STDOUT_NORMAL;
-    char *tok = NULL;
+    stg =  NEW(stage)();
+    token *tok = NULL;
+
+    int e = 0;
     while (!ts->isEmpty(ts)) {
         tok = ts->popFront(ts);
-        if (!strcmp(tok, ">")) {
-            free(tok);
-            if (stg->stdout != STDOUT_NORMAL) {
-                ss->del(ss);
-                argStack->del(argStack);
-                RAISE(EXCEPTION_PASER_TOO_MANY_STDOUT_REDIR, NULL);
-            }
-            stg->stdout = STDOUT_FILE_TRUNCATE;
-            if (ts->isEmpty(ts)) {
-                ss->del(ss);
-                argStack->del(argStack);
-                RAISE(EXCEPTION_PASER_MISSING_REDIRECTION_FILE, NULL);
-            }
-            tok = ts->popFront(ts);
-            if (!strcmp(tok, "|")) {
-                ss->del(ss);
-                argStack->del(argStack);
-                RAISE(EXCEPTION_PASER_MISSING_REDIRECTION_FILE, NULL);
-                free(tok);
-            }
-            stg->stdoutArg = tok;
-        } else if (!strcmp(tok, ">>")) {
-            free(tok);
-            if (stg->stdout != STDOUT_NORMAL) {
-                ss->del(ss);
-                argStack->del(argStack);
-                RAISE(EXCEPTION_PASER_TOO_MANY_STDOUT_REDIR, NULL);
-            }
-            stg->stdout = STDOUT_FILE_APPEND;
-            if (ts->isEmpty(ts)) {
-                ss->del(ss);
-                argStack->del(argStack);
-                RAISE(EXCEPTION_PASER_MISSING_REDIRECTION_FILE, NULL);
-            }
-            tok = ts->popFront(ts);
-            if (!strcmp(tok, "|")) {
-                ss->del(ss);
-                argStack->del(argStack);
-                RAISE(EXCEPTION_PASER_MISSING_REDIRECTION_FILE, NULL);
-                free(tok);
-            }
-            stg->stdoutArg = tok;
-        } else if (!strcmp(tok, "<")) {
-            free(tok);
+        // Sanity check: if there exists more than 1 redirect
+        if (tok->type == TOKEN_STRING) {
+            stg->argStack->pushBack(stg->argStack, tok->content);
+            tok->del(tok);
+            continue;
+        }
+
+        if (tok->type == TOKEN_REDIR_STDIN) {
             if (stg->stdin != STDIN_NORMAL) {
-                ss->del(ss);
-                argStack->del(argStack);
-                RAISE(EXCEPTION_PASER_TOO_MANY_STDIN_REDIR, NULL);
+                ts->pushFront(ts, tok);
+                stg->del(stg);
+                RAISE_VOID(EXCEPTION_PASER_TOO_MANY_STDIN_REDIR);
+            }
+            if (ts->isEmpty(ts)) {
+                ts->pushFront(ts, tok);
+                stg->del(stg);
+                RAISE_VOID(EXCEPTION_PASER_MISSING_REDIRECTION_FILE);
+            }
+            token *fileToken = ts->popFront(ts);
+            if (isOperator(fileToken->type)) {
+                ts->pushFront(ts, fileToken);
+                ts->pushFront(ts, tok);
+                stg->del(stg);
+                RAISE_VOID(EXCEPTION_PASER_MISSING_REDIRECTION_FILE);
             }
             stg->stdin = STDIN_FILE;
-            if (ts->isEmpty(ts)) {
-                ss->del(ss);
-                argStack->del(argStack);
-                RAISE(EXCEPTION_PASER_MISSING_REDIRECTION_FILE, NULL);
-            }
-            tok = ts->popFront(ts);
-            if (!strcmp(tok, "|")) {
-                ss->del(ss);
-                argStack->del(argStack);
-                RAISE(EXCEPTION_PASER_MISSING_REDIRECTION_FILE, NULL);
-                free(tok);
-            }
-            stg->stdinArg = tok;
-        } else if (!strcmp(tok, "|")) {
-            free(tok);
+            stg->stdinArg = fileToken->content;
+            fileToken->content = NULL;
+            // Mimics the move sematic
+            // So that the content will not be freed on deletion
+
+            // Consumes these arguments
+            tok->del(tok);
+            fileToken->del(tok);
+            continue; // Next Token
+        }
+
+        if (tok->type == TOKEN_REDIR_STDOUT_TRUNC ||
+                tok->type == TOKEN_REDIR_STDOUT_APPEND) {
+
+            int newMode = tok->type == TOKEN_REDIR_STDOUT_APPEND ?
+                          STDOUT_FILE_APPEND:
+                          STDOUT_FILE_TRUNCATE;
+
             if (stg->stdout != STDOUT_NORMAL) {
-                ss->del(ss);
-                argStack->del(argStack);
-                RAISE(EXCEPTION_PASER_REDIRECTION_PIPE_CONFLICT, NULL);
+                ts->pushFront(ts, tok);
+                stg->del(stg);
+                RAISE_VOID(EXCEPTION_PASER_TOO_MANY_STDOUT_REDIR);
+            }
+            if (ts->isEmpty(ts)) {
+                ts->pushBack(ts, tok);
+                stg->del(stg);
+                RAISE_VOID(EXCEPTION_PASER_MISSING_REDIRECTION_FILE);
+            }
+            token *fileToken = ts->popFront(ts);
+            if (isOperator(fileToken->type)) {
+                ts->pushBack(ts, fileToken);
+                ts->pushBack(ts, tok);
+                stg->del(stg);
+                RAISE_VOID(EXCEPTION_PASER_MISSING_REDIRECTION_FILE);
+            }
+            stg->stdout = newMode;
+            stg->stdoutArg = fileToken->content;
+            fileToken->content = NULL;
+
+            tok->del(tok);
+            fileToken->del(fileToken);
+
+            continue;
+        }
+
+        if (tok->type == TOKEN_PIPE) {
+            if (stg->stdin != STDIN_NORMAL || stg->stdout != STDOUT_NORMAL) {
+                ts->pushFront(ts, tok);
+                stg->del(stg);
+                if (stg->stdin != STDIN_NORMAL) {
+                    RAISE_VOID(EXCEPTION_PASER_TOO_MANY_STDIN_REDIR);
+                } else {
+                    RAISE_VOID(EXCEPTION_PASER_TOO_MANY_STDOUT_REDIR);
+                }
             }
             stg->stdout = STDOUT_PIPED;
+            tok->del(tok);
 
-            if (argStack->isEmpty(argStack)) {
-                ss->del(ss);
-                argStack->del(argStack);
-                RAISE(EXCEPTION_PASER_MISSING_EXECUTABLE, NULL);
-            }
-
-            int argc = argStack->count;
-            stg->argv = (char**) malloc(sizeof(char*) * argc);
-            stg->argc = argStack->count;
-            stg->argv[argc] = NULL; // Required by system call
-            for (int i = 0; i < argc; ++i) {
-                stg->argv[i] = argStack->popFront(argStack);
+            if (stg->argStack->isEmpty(stg->argStack)) {
+                stg->del(stg);
+                RAISE_VOID(EXCEPTION_PASER_MISSING_EXECUTABLE);
             }
 
             ss->pushBack(ss, stg);
-            stg = (stage*)malloc(sizeof(stage));
-            stg->argv = NULL;
-            stg->stdinArg = stg->stdoutArg = NULL;
+            // This stage is over here
+
+            // Setup a new stage
+            stg = NEW(stage)();
             stg->stdin = STDIN_PIPED;
-            stg->stdout = STDOUT_NORMAL;
-        } else {
-            argStack->pushBack(argStack, tok);
+            continue;
         }
     }
-    if (argStack->isEmpty(argStack)) {
-        ss->del(ss);
-        argStack->del(argStack);
-        RAISE(EXCEPTION_PASER_MISSING_EXECUTABLE, NULL);
-    }
-    int argc = argStack->count;
-    stg->argv = (char**) malloc(sizeof(char*) * argc);
-    stg->argc = argStack->count;
-    stg->argv[argc] = NULL; // Required by system call
-    for (int i = 0; i < argc; ++i) {
-        stg->argv[i] = argStack->popFront(argStack);
+
+    if (stg->argStack->isEmpty(stg->argStack)) {
+        stg->del(stg);
+        RAISE_VOID(EXCEPTION_PASER_MISSING_EXECUTABLE);
     }
 
     ss->pushBack(ss, stg);
+}
 
-    argStack->del(argStack);
+stringStack *new_stringStack() {
+    return NEW(deque)();
+}
 
-    return ss;
+stage *new_stage() {
+    stage *ss = malloc(sizeof(stage));
+    ss->del = stageDelete;
+    ss->argStack = NEW(stringStack)();
+    ss->stdin = STDIN_NORMAL;
+    ss->stdout = STDOUT_NORMAL;
+    ss->stdinArg = ss->stdoutArg = NULL;
+}
+
+void stageDelete(stage *obj) {
+    obj->argStack->del(obj->argStack);
+    if (obj->stdinArg != NULL) free(obj->stdinArg);
+    if (obj->stdoutArg != NULL) free(obj->stdoutArg);
+    free(obj);
+}
+
+stageStack *new_stageStack() {
+    stageStack *ss = NEW(deque)();
+    ss->clear = stageStackClear;
+}
+
+void stageStackClear(stageStack *obj) {
+    while(!obj->isEmpty(obj)) {
+        stage *s = obj->popFront(obj);
+        s->del(s);
+    }
+    free(obj);
 }

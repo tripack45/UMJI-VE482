@@ -20,6 +20,9 @@ deque *new_deque() {
     d->pushFront = dequePushFront;
     d->popFront = dequePopFront;
 
+    d->front = dequeFront;
+    d->back = dequeBack;
+
     d->clear = dequeClear;
     d->del = dequeDelete;
 
@@ -105,4 +108,16 @@ void dequeDelete(deque* obj) {
     if(!obj->isEmpty(obj))
         obj->clear(obj);
     free(obj);
+}
+
+dataptr dequeFront(deque *obj) {
+    if (!obj->isEmpty(obj))
+        return obj->head.next->value;
+    RAISE(EXCEPTION_DEQUE_EMPTY, NULL);
+}
+
+dataptr dequeBack(deque *obj) {
+    if (!obj->isEmpty(obj))
+        return obj->tail.prev->value;
+    RAISE(EXCEPTION_DEQUE_EMPTY, NULL);
 }

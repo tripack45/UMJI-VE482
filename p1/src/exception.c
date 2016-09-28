@@ -3,7 +3,10 @@
 //
 
 #include "exception.h"
+#include "deque.h"
+#include "oop.h"
 
+#include <stdlib.h>
 
 int lastError;
 
