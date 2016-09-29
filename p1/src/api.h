@@ -9,23 +9,41 @@
 
 // ====== POSIX_HEADER ======
 
-typedef struct {
+typedef int (*builtinFun)(int, char**);
+
+typedef struct processInfo_t{
+    int pid;
+    int stdinFd;
     int stdoutFd;
-    int stdErrFd;
+
+    void (*del)(struct processInfo_t *obj);
+} processInfo;
+processInfo *new_processInfo();
+
+typedef struct context_t{
+    deque *infoList;
+
+    void (*regist)(processInfo *obj);
+    void (*waitAll)(struct context_t *obj);
+    void (*killById)(struct context_t *obj, int pid);
+    void (*killAll)(struct context_t *obj);
+    void (*del)(struct context_t *obj);
 } context;
+context *new_context();
 
-typedef int (*builtinFun)(int,const char**);
+void executeExtern(stage* stg, // Stage to execute
+                   context *ctx, // Context that its executing
+                   processInfo *info); // Store into p_info
+void executeBuiltIn(stage* stg,
+                    context *ctx,
+                    processInfo *info,
+                    builtinFun p);
 
-extern context ctx;
-
-void initializeContext(context *ctx);
+void setupIO(stage *s,
+             processInfo *thisInfo,
+             processInfo *nextInfo);
 
 const char* pwd();
-
-void executeExtern(stage* stg, context *ctx);
-
-void executeBuiltIn(stage* stg, context *ctx, builtinFun p);
-
 void cd(const char* newDir);
 
 int getRunningPid();
@@ -33,9 +51,9 @@ int getRunningPid();
 void actionExit(int signum);
 
 void attachSigInt(void (*fun)(int));
-
 void attachSigChd(void (*fun)(int));
-
 void actionSigChd(int signum);
+
+int translateError(int errcode);
 
 #endif //VE482_API_H

@@ -19,35 +19,21 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
-context ctx;
-
-int runningPid = -1;
-
 const char* pwd() {
     static char buf[512] = {0};
     char* ret = getcwd(buf, 512);
-    if (ret == NULL && errno == ERANGE ) {
-        RAISE(EXCEPTION_RUNTIME_PATH_TOO_LONG, NULL);
+    if (ret == NULL) {
+        int e = errno;
+        RAISE(translateError(e), NULL);
     }
     return buf;
 }
 
-void cd(const char* newDir) {
+void cd(const char *newDir) {
     int ret = chdir(newDir);
     if (ret == -1) {
         int e = errno;
-        switch (e) {
-            case EACCES:
-                RAISE_VOID(EXCEPTION_RUNTIME_PERMISSION_DENIED);
-            case ENAMETOOLONG:
-                RAISE_VOID(EXCEPTION_RUNTIME_PATH_TOO_LONG);
-            case ENOTDIR:
-                RAISE_VOID(EXCEPTION_RUNTIME_PATH_NOT_EXIST);
-            case ENOENT:
-                RAISE_VOID(EXCEPTION_RUNTIME_PATH_NOT_EXIST);
-            default:
-                RAISE_VOID(EXCEPTION_UNKNOWN);
-        }
+        RAISE_VOID(translateError(e));
     }
 }
 
@@ -61,18 +47,8 @@ void setupIO(stage* stg, context *ctx, int *inFd, int *outFd) {
         case STDIN_FILE:
             *inFd = open(stg->stdinArg, O_RDONLY);
             if (*inFd == -1) {
-                switch (errno) {
-                    case EACCES:
-                        RAISE_VOID(EXCEPTION_RUNTIME_PERMISSION_DENIED);
-                    case ENAMETOOLONG:
-                        RAISE_VOID(EXCEPTION_RUNTIME_PATH_TOO_LONG);
-                    case EISDIR:
-                        RAISE_VOID(EXCEPTION_RUNTIME_NOT_A_FILE);
-                    case ENOENT:
-                        RAISE_VOID(EXCEPTION_RUNTIME_FILE_NOT_EXIST);
-                    default:
-                        RAISE_VOID(EXCEPTION_UNKNOWN);
-                }
+                int e = errno;
+                RAISE_VOID(translateError(e)):
             }
             break;
         case STDIN_PIPED:
@@ -95,18 +71,7 @@ void setupIO(stage* stg, context *ctx, int *inFd, int *outFd) {
                      open(stg->stdoutArg, baseOptions | O_APPEND, mode);
             if (*outFd == -1) {
                 int e = errno;
-                switch (e) {
-                    case EACCES:
-                        RAISE_VOID(EXCEPTION_RUNTIME_PERMISSION_DENIED);
-                    case ENAMETOOLONG:
-                        RAISE_VOID(EXCEPTION_RUNTIME_PATH_TOO_LONG);
-                    case EISDIR:
-                        RAISE_VOID(EXCEPTION_RUNTIME_NOT_A_FILE);
-                    case ENOENT:
-                        RAISE_VOID(EXCEPTION_RUNTIME_FILE_NOT_EXIST);
-                    default:
-                        RAISE_VOID(EXCEPTION_UNKNOWN);
-                }
+
             }
             break;
         }
@@ -229,4 +194,15 @@ void actionSigChd(int signum) {
 void initializeContext(context *ctx) {
     ctx->stdoutFd = STDOUT_FILENO;
     ctx->stdErrFd = STDERR_FILENO;
+}
+
+int translateError(int e) {
+    switch (e) {
+        case EACCES:        return EXCEPTION_RUNTIME_PERMISSION_DENIED;
+        case ENAMETOOLONG:  return EXCEPTION_RUNTIME_PATH_TOO_LONG;
+        case EISDIR:        return EXCEPTION_RUNTIME_NOT_A_FILE;
+        case ENOENT:        return EXCEPTION_RUNTIME_FILE_NOT_EXIST;
+        case ERANGE:        return EXCEPTION_RUNTIME_PATH_TOO_LONG;
+        default:            return EXCEPTION_UNKNOWN;
+    }
 }

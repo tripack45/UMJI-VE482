@@ -34,9 +34,16 @@ typedef struct deque_t{
 
     void (*clear)(struct deque_t *obj);
     void (*del)(struct deque_t *obj);
+
+    dataptr* (*cloneToArray)(struct deque_t *obj);
 } deque;
 
 deque* new_deque();
+
+// Following 2 functions depends on the actual implementation
+// This requires more then the abstraction
+dataptr *deque2Array(deque *dq);
+void freeArray(dataptr *array);
 
 #ifdef DEQUE_EXPOSE_PRIVATE
 

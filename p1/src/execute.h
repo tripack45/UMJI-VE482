@@ -6,13 +6,21 @@
 #define VE482_EXECUTE_H
 
 #include "parser.h"
+#include "api.h"
 
-int execute(stageStack *ss);
+#define COMMAND_BUILTIN_EXIT    0xc1
+#define COMMAND_BUILTIN_CD      0xc2
+#define COMMAND_BUILTIN_PWD     0xc3
+#define COMMAND_EXTERNAL        0xc4
 
-int exeCd(int argc, const char* argv[]);
+int identifyBuiltin(char* cmd);
 
-int exePwd(int argc, const char* argv[]);
+int execute(stageStack *ss, context *ctx);
 
-int exeDummy(int argc, const char* argv[]);
+int exeCd(int argc, char* argv[]);
+
+int exePwd(int argc, char* argv[]);
+
+int exeDummy(int argc, char* argv[]);
 
 #endif //VE482_EXECUTE_H

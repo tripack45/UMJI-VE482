@@ -6,15 +6,19 @@
 #include "exception.h"
 #include "api.h"
 #include "parser.h"
+#include "oop.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-int exeCd(int argc, const char* argv[]) {
+int exeCd(int argc, char* argv[]) {
     if (argc > 2) {
         puts("cd : Too many arguments");
         return -1;
+    }
+    if (argc < 2) { // Just "cd", we do nothing
+        return 0;
     }
     cd(argv[1]);
     CATCH(EXCEPTION_RUNTIME_PERMISSION_DENIED) {
@@ -30,9 +34,10 @@ int exeCd(int argc, const char* argv[]) {
         puts("cd : Unknow Error.");
         resetError();
     }
+    return 0;
 }
 
-int exePwd(int argc, const char* argv[]) {
+int exePwd(int argc, char* argv[]) {
     if (argc > 1) {
         puts("pwd : Too many arguments");
         return -1;
@@ -46,29 +51,53 @@ int exePwd(int argc, const char* argv[]) {
     puts(path);
 }
 
-int exeDummy(int argc, const char* argv[]) {
+int exeDummy(int argc, char* argv[]) {
     // A dummy programming, act as an place holder
 }
 
+int identifyBuiltin(char* cmd) {
+    if (!strcmp(cmd, "exit")) return COMMAND_BUILTIN_EXIT;
+    if (!strcmp(cmd, "cd")) return COMMAND_BUILTIN_CD;
+    if (!strcmp(cmd, "pwd")) return COMMAND_BUILTIN_PWD;
+    return COMMAND_EXTERNAL;
+}
 
-int execute(stageStack *ss) {
-    initializeContext(&ctx);
+int execute(stageStack *ss, context *ctx) {
+    processInfo *thisInfo = NEW(processInfo)();
+    processInfo *nextInfo = NEW(processInfo)();
     while (!ss->isEmpty(ss)) {
+        processInfo *info = NEW(processInfo)();
         stage *s = ss->popFront(ss);
-        char* executable = s->argv[0];
-        if (strcmp(executable, "exit") == 0) {
-            exit(0);
-        } else if (strcmp(executable, "cd") == 0) {
-            int count = 0;
-            while (s->argv[++count] != NULL);
-            exeCd(count, (const char **)(s->argv));
-            executeBuiltIn(s, &ctx, exeDummy);
-        } else if (strcmp(executable, "pwd") == 0) {
-            executeBuiltIn(s, &ctx, exePwd);
+        setupIO(s, thisInfo, nextInfo);
+        stringStack *argStack = s->argStack;
+        char* executable = argStack->front(argStack);
+        int cmd_type = identifyBuiltin(executable);
+        if (cmd_type != COMMAND_EXTERNAL) {
+            switch (cmd_type) {
+                case COMMAND_BUILTIN_EXIT:
+                    exit(0);
+                case COMMAND_BUILTIN_CD: {
+                    int count = argStack->count;
+                    char **argv = (char**)argStack->cloneToArray(argStack);
+                    exeCd(count, argv);
+                    executeBuiltIn(s, ctx, thisInfo, exeDummy);
+                    freeArray(argv);
+                    break;
+                }
+                case COMMAND_BUILTIN_PWD:
+                    executeBuiltIn(s, ctx, thisInfo, exePwd);
+                    break;
+                default:
+                    executeBuiltIn(s, ctx, thisInfo, exeDummy);
+            }
         } else {
-            executeExtern(s, &ctx);
+            executeExtern(s, ctx, thisInfo);
         }
-        free(s);
+        context.regist(thisInfo);
+        thisInfo = nextInfo;
+        nextInfo = NEW(processInfo)();
+        ss->del(ss);
     }
-    ss->del(ss);
+    thisInfo->del(thisInfo);
+    nextInfo->del(nextInfo);
 }

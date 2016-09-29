@@ -8,7 +8,6 @@
 #include "exception.h"
 
 #include <stdlib.h>
-#include <assert.h>
 
 deque *new_deque() {
     deque *d = malloc(sizeof(deque));
@@ -25,6 +24,8 @@ deque *new_deque() {
 
     d->clear = dequeClear;
     d->del = dequeDelete;
+
+    d->cloneToArray = deque2Array;
 
     d->count = 0;
 
