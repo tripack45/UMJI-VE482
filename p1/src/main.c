@@ -9,6 +9,7 @@
 #include "exception.h"
 #include "api.h"
 #include "execute.h"
+#include "oop.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +18,8 @@
 
 char *buffer = NULL;
 const int bufferSize = 1200;
+
+context *ctx = NULL;
 
 void freeBuffer();
 void handleCmd(char* cmd);
@@ -39,25 +42,34 @@ void freeBuffer() {
 }
 
 void handleCmd(char* buffer) {
-    tokenStack *ts = tokenize(buffer);
-    CATCH(EXCEPTION_TOKENIZER_TOO_MANY_CHAR) {
-        printf("Input Error: Too many characters, maximum 1024 characters!\n");
-        resetError();
-        return;
+    context *ctx = NEW(context)();
+    tokenStack *ts = NEW(tokenStack)();
+    for (;;) {
+        tokenize(buffer, ts);
+        if (errcode()) ts->del(ts);
+        CATCH(EXCEPTION_TOKENIZER_TOO_MANY_CHAR) {
+            printf("Input Error: Too many characters, maximum 1024 characters!\n");
+            resetError();
+            return;
+        }
+        CATCH(EXCEPTION_TOKENIZER_UNBALANCED_QUOTE) {
+            printf("Syntax Error: Unbalanced Quotation mark!\n");
+            resetError();
+            return;
+        }
+        CATCH_ELSE() {
+            printf("Tokenizer: Unknown error, error code [%d]\n", errcode());
+            resetError();
+            return;
+        }
+        token *lastToken = ts->back(ts);
+        break;
     }
-    CATCH(EXCEPTION_TOKENIZER_UNBALANCED_QUOTE) {
-        printf("Syntax Error: Unbalanced Quotation mark!\n");
-        resetError();
-        return;
-    }
-    CATCH_ELSE() {
-        printf("Tokenizer: Unknown error, error code [%d]\n", errcode());
-        resetError();
-        return;
-    }
-    stageStack *ss = parse(ts);
+    stageStack *ss = NEW(stageStack)();
+    parse(ts, ss);
     if(errcode()) {
         ts->del(ts);
+        ss->del(ss);
     }
     CATCH(EXCEPTION_PASER_MISSING_EXECUTABLE) {
         printf("Syntax Error: Missing command!\n");
@@ -89,8 +101,13 @@ void handleCmd(char* buffer) {
         resetError();
         return;
     }
-    //printf("command successfully parsed!\n");
-    execute(ss);
+    execute(ss, ctx);
+    ctx->waitAll(ctx);
+
+    ts->del(ts);
+    ss->del(ss);
+    ctx->del(ctx);
+    ctx = NULL; // Signify no current running context.
 }
 
 
