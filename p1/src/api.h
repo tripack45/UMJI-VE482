@@ -11,8 +11,14 @@
 
 typedef int (*builtinFun)(int, char**);
 
+#define PROCESS_STATE_ERROR     0xB0
+#define PROCESS_STATE_READY     0xB1
+#define PROCESS_STATE_RUNNING   0xB2
+#define PROCESS_STATE_DONE      0xB3
+
 typedef struct processInfo_t{
     int pid;
+    int state;
     int stdinFd;
     int stdoutFd;
 
@@ -23,7 +29,7 @@ processInfo *new_processInfo();
 typedef struct context_t{
     deque *infoList;
 
-    void (*regist)(processInfo *obj);
+    void (*regist)(struct context_t *obj, processInfo *info);
     void (*waitAll)(struct context_t *obj);
     void (*killById)(struct context_t *obj, int pid);
     void (*killAll)(struct context_t *obj);
@@ -45,8 +51,6 @@ void setupIO(stage *s,
 
 const char* pwd();
 void cd(const char* newDir);
-
-int getRunningPid();
 
 void actionExit(int signum);
 

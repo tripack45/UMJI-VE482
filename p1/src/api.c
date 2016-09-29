@@ -37,125 +37,118 @@ void cd(const char *newDir) {
     }
 }
 
-void setupIO(stage* stg, context *ctx, int *inFd, int *outFd) {
-    *inFd = STDIN_FILENO;
-    *outFd = STDOUT_FILENO;
+void setupIO(stage* stg, processInfo *thisInfo, processInfo *nextInfo)  {
+    int e = 0;
     switch (stg->stdin) {
-        case STDIN_NORMAL :
-            *inFd = STDIN_FILENO;
-            break;
-        case STDIN_FILE:
-            *inFd = open(stg->stdinArg, O_RDONLY);
-            if (*inFd == -1) {
-                int e = errno;
-                RAISE_VOID(translateError(e)):
+        case STDIN_FILE: {
+            int fd = open(stg->stdinArg, O_RDONLY);
+            if (fd == -1) { // Open is unsucessful
+                thisInfo->state = PROCESS_STATE_ERROR;
+                e = errno;
+                RAISE_VOID(translateError(e));
             }
+            thisInfo->stdinFd = fd;
             break;
-        case STDIN_PIPED:
-            *inFd = ctx->stdoutFd;
-            //fprintf(stderr, "Piped from fd = %d\n", *inFd);
+        }
+        case STDIN_PIPED: {
+            // Allow current pipe to be passed through fork() and exec()
+            int currFlag = fcntl(thisInfo->stdinFd, F_GETFD);
+            fcntl(thisInfo->stdinFd, F_SETFD, currFlag & ~O_CLOEXEC);
             break;
-        default:
-            break;
+        }
+        case STDIN_NORMAL:
+        default:;
+            // These cases don't need to open files
     }
     switch (stg->stdout) {
-        case STDOUT_NORMAL:
-            *outFd = STDOUT_FILENO;
-            break;
         case STDOUT_FILE_TRUNCATE:
         case STDOUT_FILE_APPEND: {
             unsigned int baseOptions = O_WRONLY | O_CREAT;
             unsigned int mode = S_IRWXU | S_IRWXG | S_IROTH;
-            *outFd = stg->stdout == STDOUT_FILE_TRUNCATE ?
+            int outFd = stg->stdout == STDOUT_FILE_TRUNCATE ?
                      open(stg->stdoutArg, baseOptions | O_TRUNC, mode) :
                      open(stg->stdoutArg, baseOptions | O_APPEND, mode);
-            if (*outFd == -1) {
-                int e = errno;
-
+            if (outFd == -1) {
+                thisInfo->state = PROCESS_STATE_ERROR;
+                e = errno;
+                RAISE_VOID(translateError(e));
             }
             break;
         }
         case STDOUT_PIPED: {
             int pipeFd[2] = {0};
             pipe(pipeFd);
-            *outFd = pipeFd[1]; // Write into "Write End";
-            ctx->stdoutFd = pipeFd[0]; // wait for next program to read
+            thisInfo->stdoutFd = pipeFd[1]; // Write into "Write End";
+            nextInfo->stdinFd  = pipeFd[0]; // Puts into then read of next one
+            // Disallow the future info be passed through fork() and exec()
+            int currFlag = fcntl(thisInfo->stdinFd, F_GETFD);
+            fcntl(nextInfo->stdinFd, F_SETFD, currFlag | O_CLOEXEC);
+
             //fprintf(stderr, "Piped to fd = %d\n", *outFd);
             //fprintf(stderr, "Pipe other end to fd = %d\n", pipeFd[0]);
             break;
         }
+        case STDOUT_NORMAL:
+        default:;
     }
 }
 
-void executeBuiltIn(stage* stg, context *ctx, builtinFun programme) {
-    int inFd; int outFd;
-    setupIO(stg, ctx, &inFd, &outFd);
-    CATCH_ELSE(){
-        RAISE_VOID(LAST_EXCEPTION);
-    }
+void executeBuiltIn(stage* stg,
+                    context *ctx,
+                    processInfo *info,
+                    builtinFun programme) {
+    // TODO: Deal with processes failed when being setup
+    stringStack *argStack = stg->argStack;
+    char **argv = (char**)(argStack->cloneToArray(argStack));
+    int argc = argStack->count;
     int pid = fork();
     if (pid) {
-        // Parent process
-        runningPid = pid;
-        while (wait(NULL) != -1) ;
-        runningPid = -1;
-        // Wait until the child teminated
-        if (stg->stdin == STDIN_FILE)
-            close(inFd);
-        if (stg->stdout == STDOUT_FILE_APPEND
-            || stg->stdout == STDOUT_FILE_TRUNCATE)
-            close(outFd);
-        if (stg->stdin == STDIN_PIPED)
-            close(ctx->stdoutFd);
+        info->pid = pid;
+        // Now we releases these files in the parent process
+        if (info->stdinFd > 0) close(info->stdinFd);
+        if (info->stdoutFd > 0) close(info->stdoutFd);
+        info->stdinFd = -1;
+        info->stdoutFd = -1;
+        freeArray((void*)argv);
     } else {
         // Child process
-        dup2(inFd, STDIN_FILENO);
-        dup2(outFd, STDOUT_FILENO);
-        int count = 0;
-        while (stg->argv[++count] != NULL);
-        int ret = programme(count, (const char **)stg->argv);
-        exit(0);
+        if (info->stdinFd > 0)
+            dup2(info->stdinFd, STDIN_FILENO);
+        if (info->stdoutFd > 0)
+            dup2(info->stdoutFd, STDOUT_FILENO);
+        int ret = programme(argc, argv);
+        exit(ret);
     }
 }
 
 
-void executeExtern(stage* stg, context *ctx) {
-    int inFd; int outFd;
-    setupIO(stg, ctx, &inFd, &outFd);
-    CATCH_ELSE(){
-        RAISE_VOID(LAST_EXCEPTION);
-    }
-    //fprintf(stderr, "inFd = %d, outFd = %d\n", inFd, outFd);
+void executeExtern(stage* stg,
+                   context *ctx,
+                   processInfo *info) {
+    stringStack *argStack = stg->argStack;
+    char **argv = (char**)(argStack->cloneToArray(argStack));
     int pid = fork();
     if (pid) {
-        runningPid = pid;
-        // Parent process
-        //fprintf(stderr, "Waiting %s\n", stg->argv[0]);
-        while (wait(NULL) != -1);
-        // Wait until the child teminated
-        if (stg->stdin != STDIN_NORMAL) {
-            close(inFd);
-            //fprintf(stderr, "Closed fd = %d", inFd);
-        }
-        if (stg->stdout != STDOUT_NORMAL) {
-            close(outFd);
-            //fprintf(stderr, "Closed fd = %d", outFd);
-        }
-
+        info->pid = pid;
+        // Now we releases these files in the parent process
+        if (info->stdinFd > 0) close(info->stdinFd);
+        if (info->stdoutFd > 0) close(info->stdoutFd);
+        info->stdinFd = -1;
+        info->stdoutFd = -1;
+        freeArray((void*)argv);
     } else {
         // Child process
-        dup2(inFd, STDIN_FILENO);
-        dup2(outFd, STDOUT_FILENO);
-        int ret = execvp(stg->argv[0], stg->argv);
+        if (info->stdinFd > 0)
+            dup2(info->stdinFd, STDIN_FILENO);
+        if (info->stdoutFd > 0)
+            dup2(info->stdoutFd, STDOUT_FILENO);
+        int ret = execvp(argv[0], argv);
         if (ret == -1) {
-            //fprintf(stderr, "Error when executing command.\n");
+            fprintf(stderr, "Error when executing command.\n");
         }
-        exit(0);
+        exit(ret);
     }
-}
-
-int getRunningPid() {
-    return runningPid;
+    freeArray((void*)argv);
 }
 
 struct sigaction sigIntAction;
@@ -176,12 +169,7 @@ void attachSigChd(void (*fun)(int)) {
 
 void actionExit(int signum) {
     fprintf(stderr, "\n");
-    int pid = getRunningPid();
-    if (pid > 0) {
-        fprintf(stderr, "\npid = %d\n", pid);
-        kill(pid, SIGTERM);
-        puts(" User terminated.");
-    }
+    // Todo: Rewrite this using "context"
 }
 
 void actionSigChd(int signum) {
@@ -189,11 +177,6 @@ void actionSigChd(int signum) {
     while( pid = waitpid(-1, NULL, WNOHANG) > 0) {
         fprintf(stderr, "Waiting %d \n", pid);
     }
-}
-
-void initializeContext(context *ctx) {
-    ctx->stdoutFd = STDOUT_FILENO;
-    ctx->stdErrFd = STDERR_FILENO;
 }
 
 int translateError(int e) {

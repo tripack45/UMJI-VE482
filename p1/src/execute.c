@@ -81,7 +81,7 @@ int execute(stageStack *ss, context *ctx) {
                     char **argv = (char**)argStack->cloneToArray(argStack);
                     exeCd(count, argv);
                     executeBuiltIn(s, ctx, thisInfo, exeDummy);
-                    freeArray(argv);
+                    freeArray((void*)argv);
                     break;
                 }
                 case COMMAND_BUILTIN_PWD:
@@ -93,7 +93,7 @@ int execute(stageStack *ss, context *ctx) {
         } else {
             executeExtern(s, ctx, thisInfo);
         }
-        context.regist(thisInfo);
+        ctx->regist(ctx, thisInfo);
         thisInfo = nextInfo;
         nextInfo = NEW(processInfo)();
         ss->del(ss);
