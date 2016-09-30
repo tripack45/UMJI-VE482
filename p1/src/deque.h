@@ -32,6 +32,8 @@ typedef struct deque_t{
     dataptr (*front)(struct deque_t *obj);
     dataptr (*back)(struct deque_t *obj);
 
+    dataptr (*deleteNode)(struct deque_t *obj, node *n);
+
     void (*clear)(struct deque_t *obj);
     void (*del)(struct deque_t *obj);
 
@@ -57,11 +59,13 @@ dataptr dequePopFront(deque* obj);
 dataptr dequeFront(deque* obj);
 dataptr dequeBack(deque* obj);
 
+dataptr dequeDeleteNode(deque* obj, node* victim);
+
 void dequeClear(deque* obj);
 
 void dequeDelete(deque* obj);
 
-dataptr deleteNode(deque* obj, node* victim);
+
 
 #endif
 

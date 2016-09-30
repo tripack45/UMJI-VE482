@@ -25,17 +25,30 @@ typedef struct processInfo_t{
     void (*del)(struct processInfo_t *obj);
 } processInfo;
 processInfo *new_processInfo();
+#ifdef API_EXPOSE_PRIVATE
+void processInfoDelete(processInfo *obj);
+#endif
+
+typedef deque pInfoList;
+pInfoList *new_pInfoList();
 
 typedef struct context_t{
-    deque *infoList;
+    pInfoList *infoList;
 
     void (*regist)(struct context_t *obj, processInfo *info);
     void (*waitAll)(struct context_t *obj);
-    void (*killById)(struct context_t *obj, int pid);
+    //void (*killById)(struct context_t *obj, int pid);
     void (*killAll)(struct context_t *obj);
     void (*del)(struct context_t *obj);
 } context;
 context *new_context();
+#ifdef API_EXPOSE_PRIVATE
+void contextRegist(context *ctx, processInfo *info);
+void contextWaitAll(context *ctx);
+//void contextKillById(context *ctx, int pid);
+void contextKillAll(context *ctx);
+void contextDelete(context* ctx);
+#endif
 
 void executeExtern(stage* stg, // Stage to execute
                    context *ctx, // Context that its executing

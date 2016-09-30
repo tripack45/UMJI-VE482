@@ -1,9 +1,12 @@
 //
 // Created by tripack on 16-9-20.
 //
+#define API_EXPOSE_PRIVATE
+
 #include "api.h"
 #include "exception.h"
 #include "parser.h"
+#include "oop.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -18,6 +21,8 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+
+
 
 const char* pwd() {
     static char buf[512] = {0};
@@ -135,7 +140,6 @@ void executeExtern(stage* stg,
         if (info->stdoutFd > 0) close(info->stdoutFd);
         info->stdinFd = -1;
         info->stdoutFd = -1;
-        freeArray((void*)argv);
     } else {
         // Child process
         if (info->stdinFd > 0)
@@ -177,6 +181,87 @@ void actionSigChd(int signum) {
     while( pid = waitpid(-1, NULL, WNOHANG) > 0) {
         fprintf(stderr, "Waiting %d \n", pid);
     }
+}
+
+context *new_context() {
+    context *ctx = malloc(sizeof(ctx));
+
+    ctx->regist = contextRegist;
+    ctx->waitAll = contextWaitAll;
+    //ctx->killById = contextKillById;
+    ctx->killAll = contextKillAll;
+
+    ctx->del = contextDelete;
+
+    ctx->infoList = NEW(pInfoList)();
+}
+
+pInfoList *new_pInfoList() {
+    pInfoList *pL = NEW(deque)();
+    // No need to overrive clear()
+    // We assume processInfo can be directly freed safely
+}
+
+void contextRegist(context *ctx, processInfo *info) {
+    ctx->infoList->pushBack(ctx->infoList, info);
+}
+
+void contextWaitAll(context *ctx) {
+    int pid = -1;
+    pInfoList *infoList = ctx->infoList;
+    while ((pid = wait(NULL)) > 0) {
+        node *begin = infoList->head.next;
+        node *end = &infoList->tail;
+        for (node *n = begin; n != end; n = n->next) {
+            processInfo *pInfo = n->value;
+            if (pInfo->pid == pid) {
+                infoList->deleteNode(infoList, n);
+                pInfo->del(pInfo);
+            }
+        }
+        assert(1); // We have a leak. A process is started but not managed
+    }
+}
+
+//void contextKillById(context *ctx, int pid);
+
+void contextKillAll(context *ctx) {
+    deque *infoList = ctx->infoList;
+    node *begin = infoList->head.next;
+    node *end = &infoList->tail;
+    for (node *n = begin; n != end; n = n->next) {
+        processInfo *pInfo = n->value;
+        kill(pInfo->pid, SIGTERM);
+    }
+}
+
+void contextDelete(context* ctx) {
+    ctx->infoList->del(ctx->infoList);
+    free(ctx);
+}
+
+processInfo *new_processInfo() {
+    processInfo *pInfo = malloc(sizeof(processInfo));
+
+    pInfo->del = processInfoDelete;
+
+    pInfo->state = PROCESS_STATE_READY;
+    pInfo->pid = -1;
+    pInfo->stdinFd = -1;
+    pInfo->stdoutFd = -1;
+
+    // These default values are platform specific.
+    // In linux all three values will not be negative
+    // if they are valid.
+
+    return pInfo;
+}
+
+void processInfoDelete(processInfo *obj) {
+    free(obj);
+    // TODO: if file fields are none-negative, we have a leak.
+    assert(obj->stdinFd > 0);
+    assert(obj->stdoutFd > 0);
 }
 
 int translateError(int e) {

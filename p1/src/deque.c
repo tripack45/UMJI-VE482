@@ -22,6 +22,8 @@ deque *new_deque() {
     d->front = dequeFront;
     d->back = dequeBack;
 
+    d->deleteNode = dequeDeleteNode;
+
     d->clear = dequeClear;
     d->del = dequeDelete;
 
@@ -36,6 +38,30 @@ deque *new_deque() {
 
 int dequeIsEmpty(deque *obj) {
     return obj->count == 0;
+}
+
+// Return an NULL terminated array of the content
+// It works with the implementation, other then the abstraction
+// It returns a "view", where content are not actually copied.
+// It's a "shallow copy"
+dataptr *deque2Array(deque *dq) {
+    int count = dq->count;
+    dataptr *array = calloc(sizeof(dataptr), count + 1);
+    node *begin = dq->head.next;
+    node *end = &dq->tail;
+    int loc = 0;
+    for (node *n = begin; n != end; n = n->next) {
+        array[loc++] = n->value;
+    }
+    // loc points to one pass the end
+    array[loc] = NULL;
+    return array;
+}
+
+// Since content are not compied
+// Only need release the array itself.
+void freeArray(dataptr *array) {
+    free(array);
 }
 
 void dequePushFront(deque* obj, const dataptr elem) {
@@ -68,7 +94,7 @@ void dequePushBack(deque* obj, const dataptr elem) {
     obj->count++;
 }
 
-dataptr deleteNode(deque* obj, node* victim) {
+dataptr dequeDeleteNode(deque* obj, node* victim) {
     dataptr ret = victim->value;
 
     node *next = victim->next;
@@ -89,7 +115,7 @@ dataptr dequePopBack(deque* obj) {
         RAISE(EXCEPTION_DEQUE_EMPTY, NULL);
 
     node *victim = obj->tail.prev;
-    return deleteNode(obj, victim);
+    return dequeDeleteNode(obj, victim);
 }
 
 dataptr dequePopFront(deque* obj) {
@@ -97,7 +123,7 @@ dataptr dequePopFront(deque* obj) {
         RAISE(EXCEPTION_DEQUE_EMPTY, NULL);
 
     node *victim = obj->head.next;
-    return deleteNode(obj, victim);
+    return dequeDeleteNode(obj, victim);
 }
 
 void dequeClear(deque* obj) {
