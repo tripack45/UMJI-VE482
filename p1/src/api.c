@@ -121,6 +121,7 @@ void executeBuiltIn(stage* stg,
             dup2(info->stdinFd, STDIN_FILENO);
         if (info->stdoutFd > 0)
             dup2(info->stdoutFd, STDOUT_FILENO);
+        if (info->state == PROCESS_STATE_ERROR) exit(-1);
         int ret = programme(argc, argv);
         exit(ret);
     }
@@ -147,6 +148,7 @@ void executeExtern(stage* stg,
             dup2(info->stdinFd, STDIN_FILENO);
         if (info->stdoutFd > 0)
             dup2(info->stdoutFd, STDOUT_FILENO);
+        if (info->state == PROCESS_STATE_ERROR) exit(-1);
         int ret = execvp(argv[0], argv);
         if (ret == -1) {
             fprintf(stderr, "Error when executing command.\n");
