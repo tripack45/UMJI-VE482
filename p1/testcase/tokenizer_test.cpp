@@ -3,6 +3,7 @@
 //
 
 #include <gtest/gtest.h>
+#include "../src/oop.h"
 
 extern "C" {
 #include "../src/tokenizer.h"
@@ -10,9 +11,12 @@ extern "C" {
 
 TEST(TOKENIZER, SIMPLE) {
     const char *cmd = "ls";
-    tokenStack *ts = tokenize(cmd);
-    char *t0 = (char*)ts->popFront(ts);
-    ASSERT_STREQ(t0, "ls");
+    tokenStack *ts = NEW(tokenStack)();
+    tokenize(cmd, ts);
+    token *t0 = (token*)ts->popFront(ts);
+    ASSERT_EQ(t0->type, TOKEN_STRING);
+    ASSERT_STREQ(t0->content, "ls");
+    t0->del(t0);
     ts->del(ts);
 }
 
@@ -21,10 +25,14 @@ TEST(TOKENIZER, BLANK) {
     const char *cmd1 = " ";
     const char *cmd2 = "    ";
     const char *cmd3 = "    ";
-    tokenStack *ts0 = tokenize(cmd0);
-    tokenStack *ts1 = tokenize(cmd0);
-    tokenStack *ts2 = tokenize(cmd0);
-    tokenStack *ts3 = tokenize(cmd0);
+    tokenStack *ts0 = NEW(tokenStack)();
+    tokenStack *ts1 = NEW(tokenStack)();
+    tokenStack *ts2 = NEW(tokenStack)();
+    tokenStack *ts3 = NEW(tokenStack)();
+    tokenize(cmd0, ts0);
+    tokenize(cmd1, ts1);
+    tokenize(cmd2, ts2);
+    tokenize(cmd3, ts3);
     ASSERT_TRUE(ts0->isEmpty(ts0));
     ASSERT_TRUE(ts1->isEmpty(ts1));
     ASSERT_TRUE(ts2->isEmpty(ts2));
@@ -36,54 +44,62 @@ TEST(TOKENIZER, BLANK) {
 }
 
 TEST(TOKENIZER, MULTI) {
-    const char *cmd = "  ls  -al    | grep abc | ls  -a  -b   >    123.txt  ";
-    tokenStack *ts = tokenize(cmd);
-    ASSERT_STREQ((char*)ts->popFront(ts), "ls");
-    ASSERT_STREQ((char*)ts->popFront(ts), "-al");
-    ASSERT_STREQ((char*)ts->popFront(ts), "|");
-    ASSERT_STREQ((char*)ts->popFront(ts), "grep");
-    ASSERT_STREQ((char*)ts->popFront(ts), "abc");
-    ASSERT_STREQ((char*)ts->popFront(ts), "|");
-    ASSERT_STREQ((char*)ts->popFront(ts), "ls");
-    ASSERT_STREQ((char*)ts->popFront(ts), "-a");
-    ASSERT_STREQ((char*)ts->popFront(ts), "-b");
-    ASSERT_STREQ((char*)ts->popFront(ts), ">");
-    ASSERT_STREQ((char*)ts->popFront(ts), "123.txt");
+    const char *cmd = "  ls  -al    | grep abc | ls  -a  -b   >    123.txt >> \">\" < \" < \"  ";
+    tokenStack *ts = NEW(tokenStack)();
+    tokenize(cmd, ts);
+    token *s = NULL;
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, "ls");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, "-al");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_PIPE); ASSERT_STREQ(s->content, NULL);
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, "grep");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, "abc");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_PIPE); ASSERT_STREQ(s->content, NULL);
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, "ls");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, "-a");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, "-b");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_REDIR_STDOUT_TRUNC); ASSERT_STREQ(s->content, NULL);
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, "123.txt");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_REDIR_STDOUT_APPEND); ASSERT_STREQ(s->content, NULL);
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, ">");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_REDIR_STDIN); ASSERT_STREQ(s->content, NULL);
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, " < ");
     ASSERT_TRUE(ts->isEmpty(ts));
-    
     ts->del(ts);;
 }
-
-TEST(TOKENIZER, QUOTE) {
-    const char *cmd = "  ls  -al \"| < a.txt\"   | grep abc | ls  -a  -b   >    123.txt  ";
-    tokenStack *ts = tokenize(cmd);
-    ASSERT_STREQ((char*)ts->popFront(ts), "ls");
-    ASSERT_STREQ((char*)ts->popFront(ts), "-al");
-    ASSERT_STREQ((char*)ts->popFront(ts), "| < a.txt");
-    ASSERT_STREQ((char*)ts->popFront(ts), "|");
-    ASSERT_STREQ((char*)ts->popFront(ts), "grep");
-    ASSERT_STREQ((char*)ts->popFront(ts), "abc");
-    ASSERT_STREQ((char*)ts->popFront(ts), "|");
-    ASSERT_STREQ((char*)ts->popFront(ts), "ls");
-    ASSERT_STREQ((char*)ts->popFront(ts), "-a");
-    ASSERT_STREQ((char*)ts->popFront(ts), "-b");
-    ASSERT_STREQ((char*)ts->popFront(ts), ">");
-    ASSERT_STREQ((char*)ts->popFront(ts), "123.txt");
-    ASSERT_TRUE(ts->isEmpty(ts));
-    
-    ts->del(ts);;
-}
-
 
 TEST(TOKENIZER, COMPLEX) {
     const char *cmd = "ps -aux | grep \"abc \" > a.txt";
-    tokenStack *ts = tokenize(cmd);
+    tokenStack *ts = NEW(tokenStack)();
+    tokenize(cmd, ts);
+    token *s = NULL;
 
-    ASSERT_STREQ((char*)ts->popFront(ts), "ps");
-    ASSERT_STREQ((char*)ts->popFront(ts), "-aux");
-    ASSERT_STREQ((char*)ts->popFront(ts), "|");
-    ASSERT_STREQ((char*)ts->popFront(ts), "grep");
-    ASSERT_STREQ((char*)ts->popFront(ts), "abc ");
-    ASSERT_STREQ((char*)ts->popFront(ts), ">");
-    ASSERT_STREQ((char*)ts->popFront(ts), "a.txt");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, "ps");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, "-aux");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_PIPE); ASSERT_STREQ(s->content, NULL);
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, "grep");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, "abc ");
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_REDIR_STDOUT_TRUNC); ASSERT_STREQ(s->content, NULL);
+    s = (token*)ts->popFront(ts);
+    ASSERT_EQ(s->type, TOKEN_STRING); ASSERT_STREQ(s->content, "a.txt");
 }

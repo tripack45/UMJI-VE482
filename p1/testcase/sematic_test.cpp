@@ -37,74 +37,109 @@ TEST(SEMANTIC, NORMAL0) {
     parse(ts, ss);
 
     stage *s = NULL;
+    char **array = NULL;
+
     ASSERT_EQ(ss->count, 2);
-    s = (stage*)ss->popFront(ss);
-    ASSERT_EQ(s->argc , 2);
-    ASSERT_EQ(s->stdin, STDIN_NORMAL);
-    ASSERT_EQ(s->stdout, STDOUT_PIPED);
-    ASSERT_EQ(s->argv[2], (char*)NULL);
-    ASSERT_STREQ(s->argv[0], "ps");
-    ASSERT_STREQ(s->argv[1], "-aux");
 
     s = (stage*)ss->popFront(ss);
-    ASSERT_EQ(s->argc , 2);
+    array = (char**)s->argStack->cloneToArray(s->argStack);
+    ASSERT_EQ(s->argStack->count , 2);
+    ASSERT_EQ(s->stdin, STDIN_NORMAL);
+    ASSERT_EQ(s->stdout, STDOUT_PIPED);
+    ASSERT_EQ(array[2], (char*)NULL);
+    ASSERT_STREQ(array[0], "ps");
+    ASSERT_STREQ(array[1], "-aux");
+    s->del(s);
+    freeArray((dataptr*)array);
+
+    s = (stage*)ss->popFront(ss);
+    array = (char**)s->argStack->cloneToArray(s->argStack);
+    ASSERT_EQ(s->argStack->count , 2);
     ASSERT_EQ(s->stdin, STDIN_PIPED);
     ASSERT_EQ(s->stdout, STDOUT_FILE_TRUNCATE);
     ASSERT_STREQ(s->stdoutArg, "a.txt");
-    ASSERT_EQ(s->argv[2], (char*)NULL);
-    ASSERT_STREQ(s->argv[0], "grep");
-    ASSERT_STREQ(s->argv[1], "abc ");
+    ASSERT_EQ(array[2], (char*)NULL);
+    ASSERT_STREQ(array[0], "grep");
+    ASSERT_STREQ(array[1], "abc ");
+
+    s->del(s);
+    freeArray((dataptr*)array);
 
     ASSERT_TRUE(ss->isEmpty(ss));
+
+    ss->del(ss);
 }
 
 TEST(SEMANTIC, SIMPLE) {
     const char *cmd = "pwd";
-    tokenStack *ts = tokenize(cmd);
-    stageStack *ss = parse(ts);
+    tokenStack *ts = NEW(tokenStack)();
+    stageStack *ss = NEW(stageStack)();
+    tokenize(cmd, ts);
+    parse(ts, ss);
 
     stage *s = NULL;
+    char **array = NULL;
+
     ASSERT_EQ(ss->count, 1);
 
     s = (stage*)ss->popFront(ss);
-    ASSERT_EQ(s->argc , 1);
+    array = (char**)s->argStack->cloneToArray(s->argStack);
+    ASSERT_EQ(s->argStack->count , 1);
     ASSERT_EQ(s->stdin, STDIN_NORMAL);
     ASSERT_EQ(s->stdout, STDOUT_NORMAL);
-    ASSERT_EQ(s->argv[1], (char*)NULL);
-    ASSERT_STREQ(s->argv[0], "pwd");
+    ASSERT_STREQ(array[1], NULL);
+    ASSERT_STREQ(array[0], "pwd");
+    s->del(s);
+    freeArray((dataptr*)array);
 
     ASSERT_TRUE(ss->isEmpty(ss));
+
+    ss->del(ss);
 }
 
 TEST(SEMANTIC, SIMPLE2) {
     const char *cmd = "cd /etc/next";
-    tokenStack *ts = tokenize(cmd);
-    stageStack *ss = parse(ts);
+    tokenStack *ts = NEW(tokenStack)();
+    stageStack *ss = NEW(stageStack)();
+    tokenize(cmd, ts);
+    parse(ts, ss);
 
     stage *s = NULL;
+    char **array = NULL;
+
     ASSERT_EQ(ss->count, 1);
 
     s = (stage*)ss->popFront(ss);
-    ASSERT_EQ(s->argc , 2);
+    array = (char**)s->argStack->cloneToArray(s->argStack);
+    ASSERT_EQ(s->argStack->count , 2);
     ASSERT_EQ(s->stdin, STDIN_NORMAL);
     ASSERT_EQ(s->stdout, STDOUT_NORMAL);
-    ASSERT_EQ(s->argv[2], (char*)NULL);
-    ASSERT_STREQ(s->argv[0], "cd");
-    ASSERT_STREQ(s->argv[1], "/etc/next");
+    ASSERT_STREQ(array[2], NULL);
+    ASSERT_STREQ(array[0], "cd");
+    ASSERT_STREQ(array[1], "/etc/next");
+    s->del(s);
+    freeArray((dataptr*)array);
 
     ASSERT_TRUE(ss->isEmpty(ss));
+
+    ss->del(ss);
 }
 
 TEST(SEMANTIC, REDIRECT) {
     const char *cmd = ">> 1.txt cd < 2.txt /etc/next";
-    tokenStack *ts = tokenize(cmd);
-    stageStack *ss = parse(ts);
+    tokenStack *ts = NEW(tokenStack)();
+    stageStack *ss = NEW(stageStack)();
+    tokenize(cmd, ts);
+    parse(ts, ss);
 
     stage *s = NULL;
+    char **array = NULL;
+
     ASSERT_EQ(ss->count, 1);
 
     s = (stage*)ss->popFront(ss);
-    ASSERT_EQ(s->argc , 2);
+    array = (char**)s->argStack->cloneToArray(s->argStack);
+    ASSERT_EQ(s->argStack->count , 2);
 
     ASSERT_EQ(s->stdin, STDIN_FILE);
     ASSERT_STREQ(s->stdinArg, "2.txt");
@@ -112,9 +147,14 @@ TEST(SEMANTIC, REDIRECT) {
     ASSERT_EQ(s->stdout, STDOUT_FILE_APPEND);
     ASSERT_STREQ(s->stdoutArg, "1.txt");
 
-    ASSERT_EQ(s->argv[2], (char*)NULL);
-    ASSERT_STREQ(s->argv[0], "cd");
-    ASSERT_STREQ(s->argv[1], "/etc/next");
+    ASSERT_EQ(array[2], (char*)NULL);
+    ASSERT_STREQ(array[0], "cd");
+    ASSERT_STREQ(array[1], "/etc/next");
+
+    s->del(s);
+    freeArray((dataptr*)array);
 
     ASSERT_TRUE(ss->isEmpty(ss));
+
+    ss->del(ss);
 }

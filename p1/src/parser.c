@@ -63,7 +63,7 @@ void parse(tokenStack *ts, stageStack *ss) {
 
             // Consumes these arguments
             tok->del(tok);
-            fileToken->del(tok);
+            fileToken->del(fileToken);
             continue; // Next Token
         }
 
@@ -101,15 +101,10 @@ void parse(tokenStack *ts, stageStack *ss) {
         }
 
         if (tok->type == TOKEN_PIPE) {
-            if (stg->stdin != STDIN_NORMAL || stg->stdout != STDOUT_NORMAL) {
+            if (stg->stdout != STDOUT_NORMAL) {
                 ts->pushFront(ts, tok);
-                int inMode = stg->stdin;
                 stg->del(stg);
-                if (inMode != STDIN_NORMAL) {
-                    RAISE_VOID(EXCEPTION_PASER_TOO_MANY_STDIN_REDIR);
-                } else {
-                    RAISE_VOID(EXCEPTION_PASER_TOO_MANY_STDOUT_REDIR);
-                }
+                RAISE_VOID(EXCEPTION_PASER_TOO_MANY_STDOUT_REDIR);
             }
             stg->stdout = STDOUT_PIPED;
             tok->del(tok);

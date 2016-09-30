@@ -136,8 +136,8 @@ token *new_tok(int type, char* content) {
 int getTokenType(char* str) {
     if (strcmp(str, "|") == 0) return TOKEN_PIPE;
     if (strcmp(str, "<") == 0) return TOKEN_REDIR_STDIN;
-    if (strcmp(str, "<") == 0) return TOKEN_REDIR_STDOUT_TRUNC;
-    if (strcmp(str, "<<") == 0) return TOKEN_REDIR_STDOUT_APPEND;
+    if (strcmp(str, ">") == 0) return TOKEN_REDIR_STDOUT_TRUNC;
+    if (strcmp(str, ">>") == 0) return TOKEN_REDIR_STDOUT_APPEND;
     return TOKEN_STRING;
 }
 
