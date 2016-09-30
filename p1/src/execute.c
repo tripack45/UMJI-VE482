@@ -68,6 +68,7 @@ int execute(stageStack *ss, context *ctx) {
     while (!ss->isEmpty(ss)) {
         stage *s = ss->popFront(ss);
         setupIO(s, thisInfo, nextInfo);
+        if(errcode()) resetError(), perror("");
         stringStack *argStack = s->argStack;
         char* executable = argStack->front(argStack);
         int cmd_type = identifyBuiltin(executable);

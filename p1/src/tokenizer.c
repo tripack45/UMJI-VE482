@@ -169,16 +169,16 @@ token *new_token(int type, char* content) {
     tok->type = type;
     tok->content = content;
 
-    char *c = (content == NULL ? "NULL": content);
-    fprintf(stderr, "Allocate token type %d [%s]\n", type, c);
+    //char *c = (content == NULL ? "NULL": content);
+    //fprintf(stderr, "Allocate token type %d [%s]\n", type, c);
 
     return tok;
 }
 
 void tokenDelete(token *obj) {
     assert(obj != NULL);
-    char *c = (obj->content == NULL ? "NULL": obj->content);
-    fprintf(stderr, "Free token type %d [%s]\n", obj->type, c);
+    //char *c = (obj->content == NULL ? "NULL": obj->content);
+    //fprintf(stderr, "Free token type %d [%s]\n", obj->type, c);
 
     if (obj->content != NULL)
         free(obj->content);

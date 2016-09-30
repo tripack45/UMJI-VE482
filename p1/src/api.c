@@ -78,6 +78,7 @@ void setupIO(stage* stg, processInfo *thisInfo, processInfo *nextInfo)  {
                 e = errno;
                 RAISE_VOID(translateError(e));
             }
+            thisInfo->stdoutFd = outFd;
             break;
         }
         case STDOUT_PIPED: {
@@ -262,7 +263,7 @@ processInfo *new_processInfo() {
     // These default values are platform specific.
     // In linux all three values will not be negative
     // if they are valid.
-    printf("new processinfo: %p\n", pInfo);
+    //printf("new processinfo: %p\n", pInfo);
     return pInfo;
 }
 
@@ -270,7 +271,7 @@ void processInfoDelete(processInfo *obj) {
     assert(obj->stdinFd < 0);
     assert(obj->stdoutFd < 0);
     // if file fields are none-negative, we have a leak.
-    printf("freed %p \n", obj);
+    //printf("freed %p \n", obj);
     free(obj);
 }
 
