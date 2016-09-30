@@ -114,7 +114,6 @@ void executeBuiltIn(stage* stg,
         if (info->stdoutFd > 0) close(info->stdoutFd);
         info->stdinFd = -1;
         info->stdoutFd = -1;
-        freeArray((void*)argv);
     } else {
         // Child process
         if (info->stdinFd > 0)
@@ -124,6 +123,7 @@ void executeBuiltIn(stage* stg,
         int ret = programme(argc, argv);
         exit(ret);
     }
+    freeArray((void*)argv);
 }
 
 
@@ -149,6 +149,7 @@ void executeExtern(stage* stg,
         int ret = execvp(argv[0], argv);
         if (ret == -1) {
             fprintf(stderr, "Error when executing command.\n");
+            perror("ve482sh");
         }
         exit(ret);
     }
@@ -184,7 +185,7 @@ void actionSigChd(int signum) {
 }
 
 context *new_context() {
-    context *ctx = malloc(sizeof(ctx));
+    context *ctx = malloc(sizeof(context));
 
     ctx->regist = contextRegist;
     ctx->waitAll = contextWaitAll;
@@ -194,6 +195,8 @@ context *new_context() {
     ctx->del = contextDelete;
 
     ctx->infoList = NEW(pInfoList)();
+
+    return ctx;
 }
 
 pInfoList *new_pInfoList() {
@@ -212,12 +215,18 @@ void contextWaitAll(context *ctx) {
     while ((pid = wait(NULL)) > 0) {
         node *begin = infoList->head.next;
         node *end = &infoList->tail;
-        for (node *n = begin; n != end; n = n->next) {
+        node *n = begin;
+        while (n != end){
             processInfo *pInfo = n->value;
             if (pInfo->pid == pid) {
+                // Delesion invalidates node n
+                node *nNext = n->next;
                 infoList->deleteNode(infoList, n);
                 pInfo->del(pInfo);
+                n = nNext;
+                continue;
             }
+            n = n->next;
         }
         assert(1); // We have a leak. A process is started but not managed
     }
@@ -253,15 +262,16 @@ processInfo *new_processInfo() {
     // These default values are platform specific.
     // In linux all three values will not be negative
     // if they are valid.
-
+    printf("new processinfo: %p\n", pInfo);
     return pInfo;
 }
 
 void processInfoDelete(processInfo *obj) {
+    assert(obj->stdinFd < 0);
+    assert(obj->stdoutFd < 0);
+    // if file fields are none-negative, we have a leak.
+    printf("freed %p \n", obj);
     free(obj);
-    // TODO: if file fields are none-negative, we have a leak.
-    assert(obj->stdinFd > 0);
-    assert(obj->stdoutFd > 0);
 }
 
 int translateError(int e) {

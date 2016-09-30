@@ -164,14 +164,31 @@ void clearTokenStack(tokenStack *obj) {
 token *new_token(int type, char* content) {
     token *tok = malloc(sizeof(token));
     tok->del = tokenDelete;
+    tok->cloneContent = tokenCloneContent;
 
     tok->type = type;
     tok->content = content;
+
+    char *c = (content == NULL ? "NULL": content);
+    fprintf(stderr, "Allocate token type %d [%s]\n", type, c);
+
+    return tok;
 }
 
 void tokenDelete(token *obj) {
+    assert(obj != NULL);
+    char *c = (obj->content == NULL ? "NULL": obj->content);
+    fprintf(stderr, "Free token type %d [%s]\n", obj->type, c);
+
     if (obj->content != NULL)
         free(obj->content);
     free(obj);
 }
 
+char* tokenCloneContent(token *obj) {
+    if (obj->content == NULL) return NULL;
+    int len = strlen(obj->content);
+    char *newStr = malloc(len + 1); // Terminator
+    strcpy(newStr, obj->content);
+    return newStr;
+}

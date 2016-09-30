@@ -18,12 +18,14 @@ typedef struct token_t{
     int type;
     char* content;
 
+    char* (*cloneContent)(struct token_t *obj);
     void (*del)(struct token_t *obj);
 }token;
 
 token *new_token(int type, char* content);
 #ifdef TOKENIZER_EXPOSE_PRIVATE
 void tokenDelete(token *obj);
+char* tokenCloneContent(token *obj);
 #endif
 
 

@@ -1,7 +1,9 @@
 #include <limits.h>
 #include "gtest/gtest.h"
 
+
 extern "C" {
+#include "../src/oop.h"
 #include "../src/deque.h"
 }
 

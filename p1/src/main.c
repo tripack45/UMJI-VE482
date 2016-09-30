@@ -39,6 +39,7 @@ int main() {
 
 void freeBuffer() {
     free(buffer);
+    //ctx->del(ctx);
 }
 
 void handleCmd(char* buffer) {
@@ -46,7 +47,7 @@ void handleCmd(char* buffer) {
     tokenStack *ts = NEW(tokenStack)();
     for (;;) {
         tokenize(buffer, ts);
-        if (errcode()) ts->del(ts);
+        if (errcode()) ts->del(ts), ctx->del(ctx);
         CATCH(EXCEPTION_TOKENIZER_TOO_MANY_CHAR) {
             printf("Input Error: Too many characters, maximum 1024 characters!\n");
             resetError();
@@ -70,6 +71,7 @@ void handleCmd(char* buffer) {
     if(errcode()) {
         ts->del(ts);
         ss->del(ss);
+        ctx->del(ctx);
     }
     CATCH(EXCEPTION_PASER_MISSING_EXECUTABLE) {
         printf("Syntax Error: Missing command!\n");

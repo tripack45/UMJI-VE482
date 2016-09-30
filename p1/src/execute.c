@@ -66,7 +66,6 @@ int execute(stageStack *ss, context *ctx) {
     processInfo *thisInfo = NEW(processInfo)();
     processInfo *nextInfo = NEW(processInfo)();
     while (!ss->isEmpty(ss)) {
-        processInfo *info = NEW(processInfo)();
         stage *s = ss->popFront(ss);
         setupIO(s, thisInfo, nextInfo);
         stringStack *argStack = s->argStack;
@@ -96,7 +95,7 @@ int execute(stageStack *ss, context *ctx) {
         ctx->regist(ctx, thisInfo);
         thisInfo = nextInfo;
         nextInfo = NEW(processInfo)();
-        ss->del(ss);
+        s->del(s);
     }
     thisInfo->del(thisInfo);
     nextInfo->del(nextInfo);

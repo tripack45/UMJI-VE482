@@ -8,6 +8,7 @@ extern "C" {
 #include "../src/tokenizer.h"
 #include "../src/parser.h"
 #include "../src/exception.h"
+#include "../src/oop.h"
 }
 /*
 TEST(SEMANTIC, ERROR_PIPE) {
@@ -30,8 +31,10 @@ TEST(SEMANTIC, ERROR_PIPE) {
 
 TEST(SEMANTIC, NORMAL0) {
     const char *cmd = "ps -aux | grep \"abc \" > a.txt";
-    tokenStack *ts = tokenize(cmd);
-    stageStack *ss = parse(ts);
+    tokenStack *ts = NEW(tokenStack)();
+    stageStack *ss = NEW(stageStack)();
+    tokenize(cmd, ts);
+    parse(ts, ss);
 
     stage *s = NULL;
     ASSERT_EQ(ss->count, 2);

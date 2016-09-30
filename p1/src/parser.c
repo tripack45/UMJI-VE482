@@ -16,6 +16,7 @@
 // parse the given token stream
 // append the results into stage stream
 // Require both arguments are none - null
+// TODO: change the token syntax into clone()
 void parse(tokenStack *ts, stageStack *ss) {
     assert(ts != NULL);
     assert(ss != NULL);
@@ -31,7 +32,8 @@ void parse(tokenStack *ts, stageStack *ss) {
         tok = ts->popFront(ts);
         // Sanity check: if there exists more than 1 redirect
         if (tok->type == TOKEN_STRING) {
-            stg->argStack->pushBack(stg->argStack, tok->content);
+            stg->argStack->pushBack(stg->argStack,
+                                    tok->cloneContent(tok));
             tok->del(tok);
             continue;
         }
@@ -55,8 +57,7 @@ void parse(tokenStack *ts, stageStack *ss) {
                 RAISE_VOID(EXCEPTION_PASER_MISSING_REDIRECTION_FILE);
             }
             stg->stdin = STDIN_FILE;
-            stg->stdinArg = fileToken->content;
-            fileToken->content = NULL;
+            stg->stdinArg = fileToken->cloneContent(fileToken);
             // Mimics the move sematic
             // So that the content will not be freed on deletion
 
@@ -91,8 +92,7 @@ void parse(tokenStack *ts, stageStack *ss) {
                 RAISE_VOID(EXCEPTION_PASER_MISSING_REDIRECTION_FILE);
             }
             stg->stdout = newMode;
-            stg->stdoutArg = fileToken->content;
-            fileToken->content = NULL;
+            stg->stdoutArg = fileToken->cloneContent(fileToken);
 
             tok->del(tok);
             fileToken->del(fileToken);
@@ -103,8 +103,9 @@ void parse(tokenStack *ts, stageStack *ss) {
         if (tok->type == TOKEN_PIPE) {
             if (stg->stdin != STDIN_NORMAL || stg->stdout != STDOUT_NORMAL) {
                 ts->pushFront(ts, tok);
+                int inMode = stg->stdin;
                 stg->del(stg);
-                if (stg->stdin != STDIN_NORMAL) {
+                if (inMode != STDIN_NORMAL) {
                     RAISE_VOID(EXCEPTION_PASER_TOO_MANY_STDIN_REDIR);
                 } else {
                     RAISE_VOID(EXCEPTION_PASER_TOO_MANY_STDOUT_REDIR);
