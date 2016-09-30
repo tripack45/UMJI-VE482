@@ -64,7 +64,10 @@ void handleCmd(char* buffer) {
             return;
         }
         token *lastToken = ts->back(ts);
-        break;
+        if (lastToken->type == TOKEN_STRING) break;
+        // Wait for further input if last input is special operator
+        printf("... ");
+        fgets(buffer, bufferSize, stdin);
     }
     stageStack *ss = NEW(stageStack)();
     parse(ts, ss);
