@@ -19,20 +19,33 @@
 char *buffer = NULL;
 const int bufferSize = 1200;
 
-context *ctx = NULL;
-
 void freeBuffer();
 void handleCmd(char* cmd);
+
+void sigintHandler(int signum);
 
 int main() {
     atexit(freeBuffer);
     buffer = malloc(sizeof(char) * bufferSize);
-    attachSigInt(actionExit);
+    attachSigint(sigintHandler);
+    //attachSigInt(actionExit);
     //attachSigChd(actionSigChd);
 
     for (;;) {
         printf("user@ve482:%s $ ", pwd());
-        fgets(buffer, bufferSize, stdin);
+        char *s = fgets(buffer, bufferSize, stdin);
+        // TODO: Seems that we need to rewrite the input method, sad.
+        /*
+        if (s == NULL)
+            printf("bad input!");
+        else {
+            puts("===");
+            for (int i = 0; buffer[i] != '\0'; ++i) {
+                printf("%x ", buffer[i]);
+            }
+            puts(" ");
+            puts("===");
+        }*/
         handleCmd(buffer);
     }
 }
@@ -45,6 +58,7 @@ void freeBuffer() {
 void handleCmd(char* buffer) {
     context *ctx = NEW(context)();
     tokenStack *ts = NEW(tokenStack)();
+    setContext(ctx);
     for (;;) {
         tokenize(buffer, ts);
         if (errcode()) ts->del(ts), ctx->del(ctx);
@@ -63,6 +77,7 @@ void handleCmd(char* buffer) {
             resetError();
             return;
         }
+        if (ts->isEmpty(ts)) break;
         token *lastToken = ts->back(ts);
         if (lastToken->type == TOKEN_STRING) break;
         // Wait for further input if last input is special operator
@@ -111,8 +126,17 @@ void handleCmd(char* buffer) {
 
     ts->del(ts);
     ss->del(ss);
+    setContext(NULL);
     ctx->del(ctx);
-    ctx = NULL; // Signify no current running context.
+}
+
+void sigintHandler(int signum) {
+    context *ctx = getContext();
+    if (ctx != NULL) {
+        ctx->killAll(ctx);
+        printf("\nUser Terminated");
+    }
+    printf("\n");
 }
 
 

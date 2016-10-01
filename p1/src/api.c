@@ -21,8 +21,17 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <signal.h>
 
+context *ctx;
 
+context *getContext() {
+    return ctx;
+}
+
+void setContext(context *c) {
+    ctx = c;
+}
 
 const char* pwd() {
     static char buf[512] = {0};
@@ -41,6 +50,7 @@ void cd(const char *newDir) {
         RAISE_VOID(translateError(e));
     }
 }
+
 
 void setupIO(stage* stg, processInfo *thisInfo, processInfo *nextInfo)  {
     int e = 0;
@@ -159,32 +169,17 @@ void executeExtern(stage* stg,
     freeArray((void*)argv);
 }
 
-struct sigaction sigIntAction;
-struct sigaction prevIntAction;
-
-struct sigaction sigChdAction;
-struct sigaction prevChdAction;
-
-void attachSigInt(void (*fun)(int)) {
-    sigIntAction.sa_handler = fun;
-    sigaction(SIGINT, &sigIntAction, &prevIntAction);
+void attachSignal(int signum, void (*fun)(int)) {
+    struct sigaction act;
+    sigaction(signum, NULL, &act);
+    // Save the old action
+    act.sa_handler = fun;
+    sigaction(signum, &act, NULL);
+    // Replaces the old action
 }
 
-void attachSigChd(void (*fun)(int)) {
-    sigChdAction.sa_handler = fun;
-    sigaction(SIGCHLD, &sigChdAction, &prevChdAction);
-}
-
-void actionExit(int signum) {
-    fprintf(stderr, "\n");
-    // Todo: Rewrite this using "context"
-}
-
-void actionSigChd(int signum) {
-    int pid;
-    while( pid = waitpid(-1, NULL, WNOHANG) > 0) {
-        fprintf(stderr, "Waiting %d \n", pid);
-    }
+void attachSigint(void (*fun)(int)) {
+    attachSignal(SIGINT, fun);
 }
 
 context *new_context() {

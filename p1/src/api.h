@@ -65,12 +65,13 @@ void setupIO(stage *s,
 const char* pwd();
 void cd(const char* newDir);
 
-void actionExit(int signum);
+void attachSignal(int signal, void (*fun)(int));
 
-void attachSigInt(void (*fun)(int));
-void attachSigChd(void (*fun)(int));
-void actionSigChd(int signum);
+void attachSigint(void (*fun)(int));
 
 int translateError(int errcode);
+
+context *getContext();
+void setContext(context *c);
 
 #endif //VE482_API_H
