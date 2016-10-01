@@ -145,6 +145,27 @@ int isOperator(int type) {
     return (type != TOKEN_STRING);
 }
 
+// Returns the terminating character.
+char readRaw(char* buf, int bufLen) {
+    int count = 0;
+    while (count < bufLen) {
+        int c = getchar();
+        //printf("== [%d] ==", c);
+        switch (c) {
+            case '\n':
+            case '\r':
+            case EOF: { // Terminaing characters get
+                buf[count] = '\0';
+                return c;
+            }
+            default: // Usual characters
+                buf[count] = c;
+        }
+        count++;
+    }
+    buf[count] = '\0';
+    return 0; // Buffer full return.
+}
 
 
 tokenStack *new_tokenStack() {

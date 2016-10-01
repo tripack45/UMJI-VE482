@@ -45,6 +45,6 @@ int getTokenType(char* str);
 
 void tokenize(const char* str, tokenStack *ts);
 
-
+char readRaw(char* buf, int bufLen);
 
 #endif //VE482_TOKENIZER_H

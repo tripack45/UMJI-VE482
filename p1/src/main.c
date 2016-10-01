@@ -33,19 +33,14 @@ int main() {
 
     for (;;) {
         printf("user@ve482:%s $ ", pwd());
-        char *s = fgets(buffer, bufferSize, stdin);
-        // TODO: Seems that we need to rewrite the input method, sad.
-        /*
-        if (s == NULL)
-            printf("bad input!");
-        else {
-            puts("===");
-            for (int i = 0; buffer[i] != '\0'; ++i) {
-                printf("%x ", buffer[i]);
+        char term = readRaw(buffer, bufferSize);
+        if (term != '\0') {
+            // We have an special ending situation
+            if (buffer[0] == '\0' && feof(stdin)) {
+                // Nothing but CTRL+D is inputed.
+                exit(0);
             }
-            puts(" ");
-            puts("===");
-        }*/
+        }
         handleCmd(buffer);
     }
 }
@@ -82,7 +77,7 @@ void handleCmd(char* buffer) {
         if (lastToken->type == TOKEN_STRING) break;
         // Wait for further input if last input is special operator
         printf("... ");
-        fgets(buffer, bufferSize, stdin);
+        readRaw(buffer, bufferSize);
     }
     stageStack *ss = NEW(stageStack)();
     parse(ts, ss);

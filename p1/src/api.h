@@ -74,4 +74,6 @@ int translateError(int errcode);
 context *getContext();
 void setContext(context *c);
 
+
+
 #endif //VE482_API_H
