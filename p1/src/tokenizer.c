@@ -179,7 +179,6 @@ void clearTokenStack(tokenStack *obj) {
         token *tok = obj->popFront(obj);
         tok->del(tok);
     }
-    free(obj);
 }
 
 token *new_token(int type, char* content) {

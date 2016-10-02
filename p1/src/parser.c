@@ -162,5 +162,4 @@ void stageStackClear(stageStack *obj) {
         stage *s = obj->popFront(obj);
         s->del(s);
     }
-    free(obj);
 }

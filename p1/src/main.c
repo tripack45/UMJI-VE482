@@ -34,14 +34,17 @@ int main() {
     for (;;) {
         printf("user@ve482:%s $ ", pwd());
         char term = readRaw(buffer, bufferSize);
-        if (term != '\0') {
+        if (term <= '\0') {
             // We have an special ending situation
             if (buffer[0] == '\0' && feof(stdin)) {
                 // Nothing but CTRL+D is inputed.
                 exit(0);
             }
+        } else {
+            handleCmd(buffer);
         }
-        handleCmd(buffer);
+        if (term != '\n' && term != '\r')
+            printf("\n"); // Put an extra enter
     }
 }
 
@@ -131,7 +134,6 @@ void sigintHandler(int signum) {
         ctx->killAll(ctx);
         printf("\nUser Terminated");
     }
-    printf("\n");
 }
 
 
