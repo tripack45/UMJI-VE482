@@ -49,10 +49,12 @@ int exePwd(int argc, char* argv[]) {
         return -1;
     }
     puts(path);
+    return 0;
 }
 
 int exeDummy(int argc, char* argv[]) {
     // A dummy programming, act as an place holder
+    return 0;
 }
 
 int identifyBuiltin(char* cmd) {
@@ -100,4 +102,6 @@ int execute(stageStack *ss, context *ctx) {
     }
     thisInfo->del(thisInfo);
     nextInfo->del(nextInfo);
+
+    return 0;
 }

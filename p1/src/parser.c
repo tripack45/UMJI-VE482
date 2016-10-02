@@ -39,7 +39,7 @@ void parse(tokenStack *ts, stageStack *ss) {
         }
 
         if (tok->type == TOKEN_REDIR_STDIN) {
-            if (stg->stdin != STDIN_NORMAL) {
+            if (stg->in != STDIN_NORMAL) {
                 ts->pushFront(ts, tok);
                 stg->del(stg);
                 RAISE_VOID(EXCEPTION_PASER_TOO_MANY_STDIN_REDIR);
@@ -56,7 +56,7 @@ void parse(tokenStack *ts, stageStack *ss) {
                 stg->del(stg);
                 RAISE_VOID(EXCEPTION_PASER_MISSING_REDIRECTION_FILE);
             }
-            stg->stdin = STDIN_FILE;
+            stg->in = STDIN_FILE;
             stg->stdinArg = fileToken->cloneContent(fileToken);
             // Mimics the move sematic
             // So that the content will not be freed on deletion
@@ -74,7 +74,7 @@ void parse(tokenStack *ts, stageStack *ss) {
                           STDOUT_FILE_APPEND:
                           STDOUT_FILE_TRUNCATE;
 
-            if (stg->stdout != STDOUT_NORMAL) {
+            if (stg->out != STDOUT_NORMAL) {
                 ts->pushFront(ts, tok);
                 stg->del(stg);
                 RAISE_VOID(EXCEPTION_PASER_TOO_MANY_STDOUT_REDIR);
@@ -91,7 +91,7 @@ void parse(tokenStack *ts, stageStack *ss) {
                 stg->del(stg);
                 RAISE_VOID(EXCEPTION_PASER_MISSING_REDIRECTION_FILE);
             }
-            stg->stdout = newMode;
+            stg->out = newMode;
             stg->stdoutArg = fileToken->cloneContent(fileToken);
 
             tok->del(tok);
@@ -101,12 +101,12 @@ void parse(tokenStack *ts, stageStack *ss) {
         }
 
         if (tok->type == TOKEN_PIPE) {
-            if (stg->stdout != STDOUT_NORMAL) {
+            if (stg->out != STDOUT_NORMAL) {
                 ts->pushFront(ts, tok);
                 stg->del(stg);
                 RAISE_VOID(EXCEPTION_PASER_TOO_MANY_STDOUT_REDIR);
             }
-            stg->stdout = STDOUT_PIPED;
+            stg->out = STDOUT_PIPED;
             tok->del(tok);
 
             if (stg->argStack->isEmpty(stg->argStack)) {
@@ -119,7 +119,7 @@ void parse(tokenStack *ts, stageStack *ss) {
 
             // Setup a new stage
             stg = NEW(stage)();
-            stg->stdin = STDIN_PIPED;
+            stg->in = STDIN_PIPED;
             continue;
         }
     }
@@ -140,9 +140,10 @@ stage *new_stage() {
     stage *ss = malloc(sizeof(stage));
     ss->del = stageDelete;
     ss->argStack = NEW(stringStack)();
-    ss->stdin = STDIN_NORMAL;
-    ss->stdout = STDOUT_NORMAL;
+    ss->in = STDIN_NORMAL;
+    ss->out = STDOUT_NORMAL;
     ss->stdinArg = ss->stdoutArg = NULL;
+    return ss;
 }
 
 void stageDelete(stage *obj) {
@@ -155,6 +156,7 @@ void stageDelete(stage *obj) {
 stageStack *new_stageStack() {
     stageStack *ss = NEW(deque)();
     ss->clear = stageStackClear;
+    return ss;
 }
 
 void stageStackClear(stageStack *obj) {

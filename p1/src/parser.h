@@ -22,9 +22,9 @@ stringStack *new_stringStack();
 
 typedef struct stage_t{
     stringStack *argStack;
-    int stdin;
+    int in;
     char* stdinArg;
-    int stdout;
+    int out;
     char* stdoutArg;
 
     void (*del)(struct stage_t *obj);

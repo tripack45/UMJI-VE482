@@ -172,6 +172,7 @@ tokenStack *new_tokenStack() {
     deque *dq = NEW(deque)();
     // Behold! The majesty of Polymorphism!
     dq->clear = clearTokenStack;
+    return dq;
 }
 
 void clearTokenStack(tokenStack *obj) {

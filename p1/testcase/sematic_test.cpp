@@ -44,8 +44,8 @@ TEST(SEMANTIC, NORMAL0) {
     s = (stage*)ss->popFront(ss);
     array = (char**)s->argStack->cloneToArray(s->argStack);
     ASSERT_EQ(s->argStack->count , 2);
-    ASSERT_EQ(s->stdin, STDIN_NORMAL);
-    ASSERT_EQ(s->stdout, STDOUT_PIPED);
+    ASSERT_EQ(s->in, STDIN_NORMAL);
+    ASSERT_EQ(s->out, STDOUT_PIPED);
     ASSERT_EQ(array[2], (char*)NULL);
     ASSERT_STREQ(array[0], "ps");
     ASSERT_STREQ(array[1], "-aux");
@@ -55,8 +55,8 @@ TEST(SEMANTIC, NORMAL0) {
     s = (stage*)ss->popFront(ss);
     array = (char**)s->argStack->cloneToArray(s->argStack);
     ASSERT_EQ(s->argStack->count , 2);
-    ASSERT_EQ(s->stdin, STDIN_PIPED);
-    ASSERT_EQ(s->stdout, STDOUT_FILE_TRUNCATE);
+    ASSERT_EQ(s->in, STDIN_PIPED);
+    ASSERT_EQ(s->out, STDOUT_FILE_TRUNCATE);
     ASSERT_STREQ(s->stdoutArg, "a.txt");
     ASSERT_EQ(array[2], (char*)NULL);
     ASSERT_STREQ(array[0], "grep");
@@ -85,8 +85,8 @@ TEST(SEMANTIC, SIMPLE) {
     s = (stage*)ss->popFront(ss);
     array = (char**)s->argStack->cloneToArray(s->argStack);
     ASSERT_EQ(s->argStack->count , 1);
-    ASSERT_EQ(s->stdin, STDIN_NORMAL);
-    ASSERT_EQ(s->stdout, STDOUT_NORMAL);
+    ASSERT_EQ(s->in, STDIN_NORMAL);
+    ASSERT_EQ(s->out, STDOUT_NORMAL);
     ASSERT_STREQ(array[1], NULL);
     ASSERT_STREQ(array[0], "pwd");
     s->del(s);
@@ -112,8 +112,8 @@ TEST(SEMANTIC, SIMPLE2) {
     s = (stage*)ss->popFront(ss);
     array = (char**)s->argStack->cloneToArray(s->argStack);
     ASSERT_EQ(s->argStack->count , 2);
-    ASSERT_EQ(s->stdin, STDIN_NORMAL);
-    ASSERT_EQ(s->stdout, STDOUT_NORMAL);
+    ASSERT_EQ(s->in, STDIN_NORMAL);
+    ASSERT_EQ(s->out, STDOUT_NORMAL);
     ASSERT_STREQ(array[2], NULL);
     ASSERT_STREQ(array[0], "cd");
     ASSERT_STREQ(array[1], "/etc/next");
@@ -141,10 +141,10 @@ TEST(SEMANTIC, REDIRECT) {
     array = (char**)s->argStack->cloneToArray(s->argStack);
     ASSERT_EQ(s->argStack->count , 2);
 
-    ASSERT_EQ(s->stdin, STDIN_FILE);
+    ASSERT_EQ(s->in, STDIN_FILE);
     ASSERT_STREQ(s->stdinArg, "2.txt");
 
-    ASSERT_EQ(s->stdout, STDOUT_FILE_APPEND);
+    ASSERT_EQ(s->out, STDOUT_FILE_APPEND);
     ASSERT_STREQ(s->stdoutArg, "1.txt");
 
     ASSERT_EQ(array[2], (char*)NULL);

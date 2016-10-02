@@ -54,7 +54,7 @@ void cd(const char *newDir) {
 
 void setupIO(stage* stg, processInfo *thisInfo, processInfo *nextInfo)  {
     int e = 0;
-    switch (stg->stdin) {
+    switch (stg->in) {
         case STDIN_FILE: {
             int fd = open(stg->stdinArg, O_RDONLY);
             if (fd == -1) { // Open is unsucessful
@@ -67,20 +67,20 @@ void setupIO(stage* stg, processInfo *thisInfo, processInfo *nextInfo)  {
         }
         case STDIN_PIPED: {
             // Allow current pipe to be passed through fork() and exec()
-            int currFlag = fcntl(thisInfo->stdinFd, F_GETFD);
-            fcntl(thisInfo->stdinFd, F_SETFD, currFlag & ~O_CLOEXEC);
+            //int currFlag = fcntl(thisInfo->stdinFd, F_GETFD);
+            //fcntl(thisInfo->stdinFd, F_SETFD, currFlag & ~O_CLOEXEC);
             break;
         }
         case STDIN_NORMAL:
         default:;
             // These cases don't need to open files
     }
-    switch (stg->stdout) {
+    switch (stg->out) {
         case STDOUT_FILE_TRUNCATE:
         case STDOUT_FILE_APPEND: {
             unsigned int baseOptions = O_WRONLY | O_CREAT;
             unsigned int mode = S_IRWXU | S_IRWXG | S_IROTH;
-            int outFd = stg->stdout == STDOUT_FILE_TRUNCATE ?
+            int outFd = stg->out == STDOUT_FILE_TRUNCATE ?
                      open(stg->stdoutArg, baseOptions | O_TRUNC, mode) :
                      open(stg->stdoutArg, baseOptions | O_APPEND, mode);
             if (outFd == -1) {
@@ -97,8 +97,9 @@ void setupIO(stage* stg, processInfo *thisInfo, processInfo *nextInfo)  {
             thisInfo->stdoutFd = pipeFd[1]; // Write into "Write End";
             nextInfo->stdinFd  = pipeFd[0]; // Puts into then read of next one
             // Disallow the future info be passed through fork() and exec()
-            int currFlag = fcntl(thisInfo->stdinFd, F_GETFD);
-            fcntl(nextInfo->stdinFd, F_SETFD, currFlag | O_CLOEXEC);
+            // TODO: Deleted due to compatiblity on Minix
+            //int currFlag = fcntl(thisInfo->stdinFd, F_GETFD);
+            //fcntl(nextInfo->stdinFd, F_SETFD, currFlag | O_CLOEXEC);
 
             //fprintf(stderr, "Piped to fd = %d\n", *outFd);
             //fprintf(stderr, "Pipe other end to fd = %d\n", pipeFd[0]);
@@ -201,6 +202,7 @@ pInfoList *new_pInfoList() {
     pInfoList *pL = NEW(deque)();
     // No need to overrive clear()
     // We assume processInfo can be directly freed safely
+    return pL;
 }
 
 void contextRegist(context *ctx, processInfo *info) {
