@@ -24,6 +24,12 @@ void handleCmd(char* cmd);
 
 void sigintHandler(int signum);
 
+#ifdef __linux__
+const char *platform = "ve482@linux";
+#else
+const char *platform = "ve482@minix";
+#endif
+
 int main() {
     atexit(freeBuffer);
     buffer = malloc(sizeof(char) * bufferSize);
@@ -32,7 +38,7 @@ int main() {
     //attachSigChd(actionSigChd);
 
     for (;;) {
-        printf("user@ve482:%s $ ", pwd());
+        printf("%s:%s $ ",platform, pwd());
         char term = readRaw(buffer, bufferSize);
         if (term <= '\0') {
             // We have an special ending situation

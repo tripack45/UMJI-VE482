@@ -66,9 +66,15 @@ void setupIO(stage* stg, processInfo *thisInfo, processInfo *nextInfo)  {
             break;
         }
         case STDIN_PIPED: {
+#ifdef __linux__
             // Allow current pipe to be passed through fork() and exec()
-            //int currFlag = fcntl(thisInfo->stdinFd, F_GETFD);
-            //fcntl(thisInfo->stdinFd, F_SETFD, currFlag & ~O_CLOEXEC);
+            // MInix does not support O_CLOEXEC
+            // will cause minor security issue here
+            int currFlag = fcntl(thisInfo->stdinFd, F_GETFD);
+            fcntl(thisInfo->stdinFd, F_SETFD, currFlag & ~O_CLOEXEC);
+#else
+#pragma message "Compiling under minix. Lack of support of O_CLOEXEC, minor security issue."
+#endif
             break;
         }
         case STDIN_NORMAL:
@@ -97,12 +103,15 @@ void setupIO(stage* stg, processInfo *thisInfo, processInfo *nextInfo)  {
             thisInfo->stdoutFd = pipeFd[1]; // Write into "Write End";
             nextInfo->stdinFd  = pipeFd[0]; // Puts into then read of next one
             // Disallow the future info be passed through fork() and exec()
-            // TODO: Deleted due to compatiblity on Minix
-            //int currFlag = fcntl(thisInfo->stdinFd, F_GETFD);
-            //fcntl(nextInfo->stdinFd, F_SETFD, currFlag | O_CLOEXEC);
-
+#ifdef __linux__
+            // MInix does not support O_CLOEXEC
+            // will cause minor security issue here
+            int currFlag = fcntl(thisInfo->stdinFd, F_GETFD);
+            fcntl(nextInfo->stdinFd, F_SETFD, currFlag | O_CLOEXEC);
+#endif
             //fprintf(stderr, "Piped to fd = %d\n", *outFd);
             //fprintf(stderr, "Pipe other end to fd = %d\n", pipeFd[0]);
+
             break;
         }
         case STDOUT_NORMAL:
@@ -114,7 +123,6 @@ void executeBuiltIn(stage* stg,
                     context *ctx,
                     processInfo *info,
                     builtinFun programme) {
-    // TODO: Deal with processes failed when being setup
     stringStack *argStack = stg->argStack;
     char **argv = (char**)(argStack->cloneToArray(argStack));
     int argc = argStack->count;
