@@ -34,6 +34,8 @@ deque *new_deque() {
     d->head.prev = d->tail.next = NULL;
     d->head.next = &(d->tail);
     d->tail.prev = &(d->head);
+
+    return d;
 }
 
 int dequeIsEmpty(deque *obj) {

@@ -7,20 +7,33 @@
 #include <string.h>
 #include <assert.h>
 
-keyValuePair *new_keyValuePair(char *key, valueType val, datatype type) {
+keyValuePair *new_keyValuePair(char *key, char *rawVal,
+                               valueType val, datatype type) {
     assert(key != NULL);
-    int len = strlen(key);
-    int size = len + 1;
+    assert(rawVal != NULL);
     keyValuePair *pair = malloc(sizeof(keyValuePair));
+
+    size_t len = strlen(key);
+    size_t size = len + 1;
     pair->key = malloc(size);
     strcpy(pair->key, key);
+
+    len = strlen(rawVal);
+    size = len + 1;
+    pair->rawVal = malloc(size);
+    strcpy(pair->rawVal, rawVal);
+
     pair->val = val;
+    pair->type = type;
+
     pair->del = keyValuePairDelete;
+    pair->print = keyValuePairPrint;
     return pair;
 }
 
 void keyValuePairDelete(keyValuePair *obj) {
     if (obj->key != NULL) free(obj->key);
+    if (obj->rawVal != NULL) free(obj->rawVal);
     free(obj);
 }
 
@@ -59,9 +72,9 @@ int geqKeyValuePair(void* x, void* y) {
     assert(x != NULL);
     assert(y != NULL);
     switch (a->type) {
-        case CHAR: return a->val.c >= b->val.c;
-        case DOUBLE: return a->val.d >= b->val.d;
-        case INT: return a->val.i >= b->val.i;
+        case DATA_CHAR: return a->val.c >= b->val.c;
+        case DATA_DOUBLE: return a->val.d >= b->val.d;
+        case DATA_INT: return a->val.i >= b->val.i;
         default: assert(0); // This shouldn't happen
     }
     return -1;
@@ -73,4 +86,20 @@ int ltKeyValuePair(void* x, void* y) {
 
 int randKeyValuePair(void* x, void* y) {
     return rand() & 1;
+}
+
+void printDictionary(dictionary* d, FILE *fp) {
+    node *begin = d->head.next;
+    node *end   = &(d->tail);
+    for (node *n = begin; n != end; n = n->next) {
+        keyValuePair *pair = n->value;
+        pair->print(pair, fp);
+        fprintf(fp, "\n"); // One Pair per line.
+    }
+}
+
+void keyValuePairPrint(keyValuePair *obj, FILE *fp) {
+    fprintf(fp, "%s", obj->key);
+    fprintf(fp, "_");
+    fprintf(fp, "%s", obj->rawVal);
 }
