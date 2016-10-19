@@ -8,3 +8,5 @@ include_directories(lib/GTest/googletest/include)
 add_subdirectory(lib/GTest)
 
 add_subdirectory(p1)
+
+add_subdirectory(h3)
