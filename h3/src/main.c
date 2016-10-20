@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "dictionary.h"
 #include "exception.h"
 #include "utils.h"
@@ -11,6 +12,7 @@
 #define BUF_SIZE 1000
 
 int main(int argc, char* argv[]) {
+    srand(clock());
     if (argc < 3) {
         printf("Missing Argument, usage "
                        "./ex3 [order]_[type].txt [new order]\n");
@@ -40,8 +42,8 @@ int main(int argc, char* argv[]) {
         dict->pushBack(dict, pair);
     }
     free(buf);
-
-    printDictionary(dict, stdout);
+    fclose(fp);
+    //printDictionary(dict, stdout);
 
     printf("sorting elements\n");
     sortfun sort= NULL;
@@ -51,7 +53,7 @@ int main(int argc, char* argv[]) {
         case ORDER_RANDOM:
             sort = randKeyValuePair; break;
         case ORDER_DESCENDING:
-            sort = randKeyValuePair; break;
+            sort = ltKeyValuePair; break;
         default:
             printf("Unreachable\n"); assert(0);
     }
@@ -60,21 +62,14 @@ int main(int argc, char* argv[]) {
     char newFName[20];
     composeFileName(newFName, 20, order, d);
     printf("writing %s\n", newFName);
-    if (!strcmp(newFName, iFileName)) {
-        fclose(fp);
-        exit(0); // Nothing to do.
-        // This code can be moved upword for better performance
-    }
     FILE *nfp = fopen(newFName, "w+");
     if (nfp == NULL) {
         printf("Cannot open output file: %s\n", newFName);
-        fclose(fp);
         exit(-1);
     }
     printDictionary(dict, nfp);
 
     dict->del(dict);
     fclose(nfp);
-    fclose(fp);
     return 0;
 }
