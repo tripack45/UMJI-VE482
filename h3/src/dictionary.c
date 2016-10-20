@@ -55,8 +55,8 @@ void sortDictionary(dictionary* d, sortfun f) {
     node *begin = d->head.next;
     node *end = &d->tail;
     for (node *inode = begin; inode != end; inode = inode->next) {
-        for (node *jnode = end; jnode != inode; jnode = jnode->prev) {
-            if (!f(jnode->prev, jnode)) { // if not (prev <= next), sorts to ascending
+        for (node *jnode = end->prev; jnode != inode; jnode = jnode->prev) {
+            if (!f(jnode->prev->value, jnode->value)) { // if not (prev <= next), sorts to ascending
                 node tnode;
                 tnode.value = jnode->value;
                 jnode->value = jnode->prev->value;
