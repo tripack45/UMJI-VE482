@@ -111,15 +111,15 @@ void composeFileName(char *buffer, int len,
     char *orderStr = NULL;
     char *dataTypeStr = NULL;
     switch (order) {
-        case ORDER_ASCENDING: orderStr = "inc";
-        case ORDER_DESCENDING: orderStr = "dec";
-        case ORDER_RANDOM: orderStr = "rand";
+        case ORDER_ASCENDING: orderStr = "inc"; break;
+        case ORDER_DESCENDING: orderStr = "dec"; break;
+        case ORDER_RANDOM: orderStr = "rand"; break;
         default:assert(0);
     }
     switch (d) {
-        case DATA_INT: dataTypeStr = "int";
-        case DATA_DOUBLE: dataTypeStr = "double";
-        case DATA_CHAR: dataTypeStr = "char";
+        case DATA_INT: dataTypeStr = "int"; break;
+        case DATA_DOUBLE: dataTypeStr = "double"; break;
+        case DATA_CHAR: dataTypeStr = "char"; break;
         default:assert(0);
     }
     strcat(buf, orderStr);
