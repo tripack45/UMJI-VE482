@@ -9,7 +9,5 @@ list(APPEND SOURCE_FILES
         src/dictionary.c
         src/exception.c)
 
-add_subdirectory(testcase)
-
 # The default target
 add_executable(h3_ex3 ${SOURCE_FILES})
