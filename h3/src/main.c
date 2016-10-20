@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
         case ORDER_RANDOM:
             sort = randKeyValuePair; break;
         case ORDER_DESCENDING:
-            sort = ltKeyValuePair; break;
+            sort = leqKeyValuePair; break;
         default:
             printf("Unreachable\n"); assert(0);
     }

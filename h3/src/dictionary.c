@@ -84,6 +84,24 @@ int ltKeyValuePair(void* x, void* y) {
     return !geqKeyValuePair(x, y);
 }
 
+int leqKeyValuePair(void* x, void* y) {
+    keyValuePair *a = x;
+    keyValuePair *b = y;
+    assert(x != NULL);
+    assert(y != NULL);
+    switch (a->type) {
+        case DATA_CHAR: return a->val.c <= b->val.c;
+        case DATA_DOUBLE: return a->val.d <= b->val.d;
+        case DATA_INT: return a->val.i <= b->val.i;
+        default: assert(0); // This shouldn't happen
+    }
+    return -1;
+}
+
+int gtKeyValuePair(void* x, void* y) {
+    return !leqKeyValuePair(x, y);
+}
+
 int randKeyValuePair(void* x, void* y) {
     return rand() & 1;
 }

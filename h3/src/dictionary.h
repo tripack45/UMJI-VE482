@@ -46,6 +46,7 @@ void printDictionary(dictionary* d, FILE *fp);
 int geqKeyValuePair(void* x, void* y);
 int ltKeyValuePair(void* x, void* y);
 int randKeyValuePair(void* x, void* y);
-
+int gtKeyValuePair(void* x, void* y);
+int leqKeyValuePair(void* x, void* y);
 
 #endif //VE482_DICTIONARY_H
