@@ -1,0 +1,33 @@
+h3_ex3
+
+For better visual, please view the pdf version
+
+### Compiling:
+In the `ex3/` directory, run 
+```bash
+make # build the program
+make test # build the test
+```
+### Usage:
+To use the program, run 
+```bash
+./h3_ex3 {order}_{dataType}.txt {new order}
+# For example: ./h3_ex3 inc_int.txt rand
+```
+You can simply run `./p3_exe` to see a usage help.
+
+To test the program, run
+```bash
+./h3_ex3_test
+# This prints test content on the screen.
+# Change the content of src/test.c for different datatype/dataset
+```
+#### Automated regression tests
+
+A script is provided to test the program behavior using automated generated data. This script is  `testcase/test.sh`. To use this feature, please first build the program using instruction provided above, then invoke this script. The script will generate random test data and sort them using unix `sort` program. It will then compile the result against the output of the program using `diff`. 
+
+Since there is no good way of automatically testing `rand` option. You will need to test this manually by running the program.
+
+### Some footnotes:
+
+The program is written in an *OOP* style. The `deque` structure mimics a container object. It is implemented using the linked list. The contained the datatype is `keyValuePair`. The design allows the `deque` to be used in a flexible way.
