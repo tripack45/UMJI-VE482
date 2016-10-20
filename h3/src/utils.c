@@ -34,9 +34,9 @@ keyValuePair *parseLine(char* line, datatype d) {
     char *v = cloneSubStr(line, separator + 1, end);
     valueType val;
     switch (d) {
-        case DATA_DOUBLE: sscanf("%lf", v, &(val.d)); break;
-        case DATA_INT: sscanf("%d", v, &(val.i)); break;
-        case DATA_CHAR: sscanf("%c", v, &(val.c)); break;
+        case DATA_DOUBLE: sscanf(v, "%lf", &(val.d)); break;
+        case DATA_INT: sscanf(v, "%d", &(val.i)); break;
+        case DATA_CHAR: sscanf(v, "%c", &(val.c)); break;
         default: assert(0);
     }
     keyValuePair *pair = new_keyValuePair(k, v, val, d);
