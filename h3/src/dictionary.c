@@ -100,6 +100,6 @@ void printDictionary(dictionary* d, FILE *fp) {
 
 void keyValuePairPrint(keyValuePair *obj, FILE *fp) {
     fprintf(fp, "%s", obj->key);
-    fprintf(fp, "_");
+    fprintf(fp, "=");
     fprintf(fp, "%s", obj->rawVal);
 }

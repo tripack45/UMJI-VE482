@@ -41,6 +41,8 @@ int main(int argc, char* argv[]) {
     }
     free(buf);
 
+    printDictionary(dict, stdout);
+
     printf("sorting elements\n");
     sortfun sort= NULL;
     switch (order) {
