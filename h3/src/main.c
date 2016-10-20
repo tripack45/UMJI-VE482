@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
     char *iFileName = argv[1];
-    char *newOrder = argv[0];
+    char *newOrder = argv[2];
     datatype d = parseFilename(iFileName);
     ordertype order = parseOrder(newOrder);
     FILE *fp = fopen(iFileName, "r");
