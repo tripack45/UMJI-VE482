@@ -11,10 +11,47 @@
 #define INPUT_BUF_SIZE 100
 
 void getStrInput(char* buf, int bufSize);
+int menu();
+int entrySort();
+int entryDisplay();
+int entryExit();
+
+const char* entryText[] = {
+        "Sort a file\n",
+        "Print Content of a file\n",
+        "Exit Program\n"
+};
+
+int (*(entry[]))() = {
+        entrySort,
+        entryDisplay,
+        entryExit
+};
 
 int main() {
     printf("Textual dictionary sorter v0.2\n");
+    for(;;) {
+        int i = menu();
+        int ret = (entry[i])();
+    }
+}
 
+int menu() {
+    printf("Please select a function.\n");
+    int len = sizeof(entry) / sizeof(*entry);
+    for (int i = 0; i < len; ++i) {
+        printf("%d) %s", i, entryText[i]);
+    }
+    printf("Choice: ");
+    int choice; scanf("%d", &choice);
+    while (choice >= len || choice < 0) {
+        printf("Invalid choice, please retry: ");
+        scanf("%d", &choice);
+    }
+    return choice;
+}
+
+int entrySort() {
     char iFileName[INPUT_BUF_SIZE];
     printf("Input the file you would like to sort: ");
     getStrInput(iFileName, INPUT_BUF_SIZE);
@@ -80,8 +117,29 @@ int main() {
         default:
             printf("%d, Unknown other error.\n", ret);
     }
-    return 0;
+
+    return -1;
 }
+
+int entryExit() {
+    exit(0);
+}
+
+int entryDisplay() {
+    char iFileName[INPUT_BUF_SIZE];
+    printf("Input the file you would like to print: ");
+    getStrInput(iFileName, INPUT_BUF_SIZE);
+    FILE* fp = fopen(iFileName, "r");
+    if (fp == NULL) {
+        printf("Cannot open file \"%s\"\n", iFileName);
+        return -1;
+    }
+    putchar('\n');
+    char c;
+    while ((c=fgetc(fp)) != EOF) putchar(c);
+    putchar('\n');
+}
+
 
 void getStrInput(char* buf, int bufSize) {
     char *nbuf = malloc(bufSize);

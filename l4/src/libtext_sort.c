@@ -36,9 +36,16 @@ int sortText(char* infile,
     while ((c = readRaw(buf, LIB_TEXTSORT_BUFSIZE, fp)) != EOF) {
         if (c == 0) {
             free(buf); fclose(fp); fclose(nfp);
+            dict->del(dict);
             return LIB_TEXTSORT_EXCEPTION_BUFFER_OVERFLOW;
         }
         keyValuePair *pair = parseLine(buf, d);
+        if (pair == NULL) {
+            printf ("Incompatible file format.\n");
+            free(buf); fclose(fp); fclose(nfp);
+            dict->del(dict);
+            return -1;
+        }
         dict->pushBack(dict, pair);
     }
     free(buf);
@@ -79,14 +86,14 @@ int isSeparator(char c) {
 keyValuePair *parseLine(char* line, datatype d) {
     char *p = line;
     while (!isSeparator(*p)){
-        if (*p == '\0') assert(0); // '=' not found
+        if (*p == '\0') return NULL; // '=' not found
         p++;
     }
     int separator = (int) (p - line);
-    if (separator == 0) assert(0); // "key" not found
+    if (separator == 0) return NULL; // "key" not found
     while (*p != '\0') p++;
     int end = (int) (p - line);
-    if (end == separator) assert(0); // "value" not found
+    if (end == separator) return NULL; // "value" not found
     char *k = cloneSubStr(line, 0, separator);
     char *v = cloneSubStr(line, separator + 1, end);
     valueType val;
