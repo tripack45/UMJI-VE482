@@ -17,4 +17,6 @@ void composeFileName(char *buffer, int len,
 
 char* cloneSubStr(const char *str, int begin, int end);
 
+datatype parseDatatype(char *p);
+
 #endif //VE482_UTILS_H

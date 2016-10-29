@@ -31,10 +31,10 @@ cmd_shared: libshared
 	gcc -o l4 $(SOURCE_CMD_DRIVER) libsorttext.so libds.so
 
 ui_static: libstatic
-	gcc -o l4 $(SOURCE_CMD_DRIVER) libsorttext.a libds.a
+	gcc -o l4 $(SOURCE_UI_DRIVER) libsorttext.a libds.a
 
 ui_shared: libshared
-	gcc -o l4 $(SOURCE_CMD_DRIVER) libsorttext.so libds.so
+	gcc -o l4 $(SOURCE_UI_DRIVER) libsorttext.so libds.so
 
 libstatic:
 	gcc -c $(SOURCE_DS) $(SOURCE_LIB_SORTTEXT) $(SOURCE_LIB_SORTTEXT)

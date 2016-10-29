@@ -9,7 +9,7 @@
 #include "utils.h"
 
 
-
+datatype parseDatatype(char *p);
 
 char* cloneSubStr(const char *str, int begin, int end) {
     int tokenLen = end - begin; // Token Length
@@ -35,11 +35,15 @@ datatype parseFilename(char* fname) {
         printf("Missing Datatype!\n");
         exit(-1);
     }
-    if (!strcmp(p,"int.txt"))    return DATA_INT;
-    if (!strcmp(p,"double.txt")) return DATA_DOUBLE;
-    if (!strcmp(p,"char.txt"))   return DATA_CHAR;
-    printf("Unrecogonized Datatype!");
-    exit(-1);
+    return parseDatatype(p);
+}
+
+datatype parseDatatype(char *p) {
+    if (!strcmp(p,"int.txt")    || !strcmp(p,"int"))    return DATA_INT;
+    if (!strcmp(p,"double.txt") || !strcmp(p,"double")) return DATA_DOUBLE;
+    if (!strcmp(p,"char.txt")   || !strcmp(p,"char"))   return DATA_CHAR;
+    printf("%s : Unrecogonized Datatype!\n", p);
+    return -1;
 }
 
 ordertype parseOrder(char* orderName) {
@@ -47,8 +51,8 @@ ordertype parseOrder(char* orderName) {
     if (!strcmp(orderName, "inc")) return ORDER_ASCENDING;
     if (!strcmp(orderName, "rand")) return ORDER_RANDOM;
     if (!strcmp(orderName, "dec")) return ORDER_DESCENDING;
-    printf("Unrecogonized Order!\n");
-    exit(-1);
+    printf("%s : Unrecogonized Order!\n", orderName);
+    return -1;
 }
 
 void composeFileName(char *buffer, int len,
