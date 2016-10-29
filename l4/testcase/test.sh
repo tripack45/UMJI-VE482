@@ -1,5 +1,7 @@
 #! /bin/bash
 
+program='../l4'
+
 recho() { echo "\$ $@" ; $@ ; }
 
 test() {
@@ -21,12 +23,12 @@ sort -t '=' -k 2 -n -r rand_double.txt > ans_dec_double.txt
 LC_ALL=C sort -s -t '=' -k 2 rand_char.txt > ans_inc_char.txt
 LC_ALL=C sort -s -t '=' -k 2 -r rand_char.txt > ans_dec_char.txt
 
-./h3_ex3 rand_int.txt inc
-./h3_ex3 rand_int.txt dec
-./h3_ex3 rand_double.txt inc
-./h3_ex3 rand_double.txt dec
-./h3_ex3 rand_char.txt inc
-./h3_ex3 rand_char.txt dec
+$program rand_int.txt inc
+$program rand_int.txt dec
+$program rand_double.txt inc
+$program rand_double.txt dec
+$program rand_char.txt inc
+$program rand_char.txt dec
 
 recho 'diff ans_inc_int.txt inc_int.txt'
 recho 'diff ans_dec_int.txt dec_int.txt'
@@ -39,4 +41,6 @@ recho 'diff ans_dec_char.txt dec_char.txt'
 for j in {1..100}; do
 	echo "Test number $j"
 	test
+	sleep 0.1
+	clear
 done
